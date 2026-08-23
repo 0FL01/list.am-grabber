@@ -5,6 +5,9 @@ import requests
 from models import RentalListing
 
 
+MAX_CAPTION_LENGTH = 1024
+
+
 class TelegramNotifier:
     def __init__(self, bot_token: str, chat_id: str):
         if not bot_token.strip() or not chat_id.strip():
@@ -73,17 +76,43 @@ class TelegramNotifier:
 
 def format_listing(listing: RentalListing) -> str:
     parts = []
+    plain_parts = []
     if listing.price_text:
         parts.append(f"<b>{escape(listing.price_text)}</b>")
+        plain_parts.append(listing.price_text)
     parts.append(
         f'<a href="{escape(listing.url, quote=True)}">{escape(listing.title)}</a>'
     )
+    plain_parts.append(listing.title)
     if listing.summary:
         parts.append(escape(listing.summary))
+        plain_parts.append(listing.summary)
     if listing.seller_label:
         parts.append(f"Продавец: {escape(listing.seller_label)}")
+        plain_parts.append(f"Продавец: {listing.seller_label}")
     if listing.published_text:
         parts.append(escape(listing.published_text))
+        plain_parts.append(listing.published_text)
     if listing.updated_text:
         parts.append(escape(listing.updated_text))
+        plain_parts.append(listing.updated_text)
+    if listing.description:
+        prefix = "Описание:\n"
+        available = (
+            MAX_CAPTION_LENGTH
+            - len("\n".join(plain_parts))
+            - 1
+            - len(prefix)
+        )
+        if available > 0:
+            description = _truncate(listing.description, available)
+            parts.append(f"{prefix}{escape(description)}")
     return "\n".join(parts)
+
+
+def _truncate(value: str, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    if limit == 1:
+        return "…"
+    return f"{value[:limit - 1].rstrip()}…"

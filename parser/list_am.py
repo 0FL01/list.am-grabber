@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import dataclass
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -18,13 +19,31 @@ class CategoryPage:
     next_url: str | None
 
 
-def parse_listing_dates(html: str) -> tuple[str, str]:
+@dataclass(frozen=True)
+class ListingDetails:
+    published_text: str
+    updated_text: str
+    description: str
+    image_urls: tuple[str, ...]
+
+
+def parse_listing_details(html: str) -> ListingDetails:
     soup = BeautifulSoup(html, "html.parser")
     published_element = soup.select_one('[itemprop="datePosted"]')
-    if not published_element:
-        return "", ""
-    updated_element = published_element.find_next_sibling("span")
-    return _text(published_element), _text(updated_element)
+    updated_element = (
+        published_element.find_next_sibling("span") if published_element else None
+    )
+    description_element = soup.select_one('[itemprop="description"]')
+    if description_element:
+        for translation_marker in description_element.select(".trans"):
+            translation_marker.decompose()
+
+    return ListingDetails(
+        published_text=_text(published_element),
+        updated_text=_text(updated_element),
+        description=_text(description_element),
+        image_urls=_detail_image_urls(soup),
+    )
 
 
 def parse_category_page(html: str, current_url: str) -> CategoryPage:
@@ -78,6 +97,43 @@ def _image_urls(value: str) -> tuple[str, ...]:
         for image_id in image_ids[:10]
         if image_id.isdigit()
     )
+
+
+def _detail_image_urls(soup: BeautifulSoup) -> tuple[str, ...]:
+    decoder = json.JSONDecoder()
+    for script in soup.find_all("script"):
+        content = script.string or script.get_text()
+        if "po99.init" not in content:
+            continue
+
+        key_position = content.find("img:")
+        if key_position == -1:
+            continue
+        array_position = key_position + len("img:")
+        while array_position < len(content) and content[array_position].isspace():
+            array_position += 1
+        if array_position >= len(content) or content[array_position] != "[":
+            continue
+
+        try:
+            image_urls, _ = decoder.raw_decode(content, array_position)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(image_urls, list):
+            continue
+
+        return tuple(
+            _absolute_image_url(image_url)
+            for image_url in image_urls[:10]
+            if isinstance(image_url, str) and image_url
+        )
+    return ()
+
+
+def _absolute_image_url(image_url: str) -> str:
+    if image_url.startswith("//"):
+        return f"https:{image_url}"
+    return urljoin("https://www.list.am", image_url)
 
 
 def _find_next_url(soup: BeautifulSoup, current_url: str) -> str | None:

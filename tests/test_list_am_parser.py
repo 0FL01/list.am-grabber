@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from parser.list_am import parse_category_page, parse_listing_dates
+from parser.list_am import parse_category_page, parse_listing_details
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -35,12 +35,21 @@ class CategoryParserTest(unittest.TestCase):
             "https://www.list.am/category/56/2?price1=100000&price2=300000",
         )
 
-    def test_parses_publication_and_update_dates(self):
+    def test_parses_listing_details(self):
         html = (FIXTURES / "detail.html").read_text(encoding="utf-8")
+        details = parse_listing_details(html)
+
         self.assertEqual(
-            parse_listing_dates(html),
+            (details.published_text, details.updated_text),
             ("Размещено 10.12.2023", "Обновлено 23.08.2026, 01:29"),
         )
+        self.assertEqual(
+            details.description,
+            "По остальным вопросам смело звоните.",
+        )
+        self.assertEqual(len(details.image_urls), 10)
+        self.assertEqual(details.image_urls[0], "https://s.list.am/f/photo-01.webp")
+        self.assertEqual(details.image_urls[-1], "https://s.list.am/f/photo-10.webp")
 
 if __name__ == "__main__":
     unittest.main()

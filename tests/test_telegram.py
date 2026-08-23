@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import requests
+from bs4 import BeautifulSoup
 
 from integrations.notifications.list_am_telegram import TelegramNotifier, format_listing
 from models import RentalListing
@@ -18,6 +19,7 @@ class TelegramNotifierTest(unittest.TestCase):
             seller_label="Собственник",
             published_text="Размещено 10.12.2023",
             updated_text="Обновлено 23.08.2026, 01:29",
+            description="Очень подробное описание <&> " * 100,
             image_urls=tuple(
                 f"https://img.list.am/f/{index:03d}/101001{index:03d}.webp"
                 for index in range(1, 12)
@@ -34,6 +36,7 @@ class TelegramNotifierTest(unittest.TestCase):
         ) as post:
             TelegramNotifier("token", "chat").notify(self.listing)
 
+        self.assertEqual(post.call_count, 1)
         self.assertTrue(post.call_args.args[0].endswith("/sendMediaGroup"))
         payload = post.call_args.kwargs["json"]
         self.assertEqual(len(payload["media"]), 10)
@@ -42,6 +45,12 @@ class TelegramNotifierTest(unittest.TestCase):
         self.assertIn("2 комнаты &amp; кабинет", payload["media"][0]["caption"])
         self.assertIn("Размещено 10.12.2023", payload["media"][0]["caption"])
         self.assertIn("Обновлено 23.08.2026, 01:29", payload["media"][0]["caption"])
+        self.assertIn("Описание:", payload["media"][0]["caption"])
+        self.assertTrue(payload["media"][0]["caption"].endswith("…"))
+        caption_text = BeautifulSoup(
+            payload["media"][0]["caption"], "html.parser"
+        ).get_text()
+        self.assertLessEqual(len(caption_text), 1024)
         self.assertNotIn("caption", payload["media"][1])
         response.raise_for_status.assert_called_once_with()
 

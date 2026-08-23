@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
 
 from models import RentalListing
-from parser.list_am import parse_category_page, parse_listing_dates
+from parser.list_am import parse_category_page, parse_listing_details
 
 
 class ScanError(RuntimeError):
@@ -72,7 +72,7 @@ class ListAmScanner:
 
         return list(listings.values())
 
-    def add_dates(self, listing: RentalListing) -> RentalListing:
+    def add_details(self, listing: RentalListing) -> RentalListing:
         detail_context = self.browser.new_context(locale="ru-RU")
         detail_page = detail_context.new_page()
         try:
@@ -83,15 +83,15 @@ class ListAmScanner:
             )
             self._wait_for_challenge(detail_page)
             if self._is_challenge(detail_page):
-                raise ScanError("List.am blocked date extraction")
+                raise ScanError("List.am blocked detail extraction")
 
-            published_text, updated_text = parse_listing_dates(
-                detail_page.content()
-            )
+            details = parse_listing_details(detail_page.content())
             return replace(
                 listing,
-                published_text=published_text,
-                updated_text=updated_text,
+                published_text=details.published_text,
+                updated_text=details.updated_text,
+                description=details.description,
+                image_urls=details.image_urls or listing.image_urls,
             )
         finally:
             detail_context.close()
