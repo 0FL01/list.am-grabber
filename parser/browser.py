@@ -1,8 +1,10 @@
+from dataclasses import replace
+
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
 
 from models import RentalListing
-from parser.list_am import parse_category_page
+from parser.list_am import parse_category_page, parse_listing_dates
 
 
 class ScanError(RuntimeError):
@@ -16,6 +18,7 @@ class ListAmScanner:
         self.browser = None
         self.context = None
         self.page = None
+        self.details_blocked = False
 
     def __enter__(self):
         self._playwright_context = Stealth().use_sync(sync_playwright())
@@ -69,6 +72,26 @@ class ListAmScanner:
                 current_url = parsed_page.next_url
 
         return list(listings.values())
+
+    def add_dates(self, listing: RentalListing) -> RentalListing:
+        if self.details_blocked:
+            return listing
+        self.page.goto(
+            listing.url,
+            wait_until="domcontentloaded",
+            timeout=60_000,
+        )
+        self._wait_for_challenge()
+        if self._is_challenge():
+            self.details_blocked = True
+            raise ScanError("List.am blocked date extraction")
+
+        published_text, updated_text = parse_listing_dates(self.page.content())
+        return replace(
+            listing,
+            published_text=published_text,
+            updated_text=updated_text,
+        )
 
     def _wait_for_challenge(self) -> None:
         for _ in range(15):

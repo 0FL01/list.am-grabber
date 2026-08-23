@@ -82,4 +82,8 @@ def format_listing(listing: RentalListing) -> str:
         parts.append(escape(listing.summary))
     if listing.seller_label:
         parts.append(f"Продавец: {escape(listing.seller_label)}")
+    if listing.published_text:
+        parts.append(escape(listing.published_text))
+    if listing.updated_text:
+        parts.append(escape(listing.updated_text))
     return "\n".join(parts)

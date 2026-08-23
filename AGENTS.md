@@ -5,8 +5,8 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 ## Map
 
 - `parser_cls.py` — CLI и polling loop.
-- `parser/browser.py` — Playwright session и страницы выдачи.
-- `parser/list_am.py` — чистый разбор карточек, пагинации и изображений.
+- `parser/browser.py` — Playwright session, выдача и date enrichment новых лотов.
+- `parser/list_am.py` — чистый разбор карточек, пагинации, изображений и дат.
 - `parser/pipeline.py`, `db_service.py` — baseline и состояние доставленных алертов.
 - `integrations/notifications/list_am_telegram.py` — Telegram text/photo/album delivery.
 - `config.example.toml` — публичный шаблон runtime-конфига.
@@ -18,6 +18,7 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 - Создавать новый Playwright context на каждый scan: Cloudflare блокирует повторные проходы в старом context.
 - Первый полный scan создаёт baseline. Состояние обновляется только после успешного Telegram alert.
 - Media enrichment не должен блокировать текстовый alert.
+- Date enrichment выполняется только для лотов, выбранных для отправки.
 - Telegram album: максимум 10 первых фото, caption только у первого.
 - Между алертами одной пачки сохранять Telegram jitter не меньше 1 секунды.
 - Не коммитить `config.toml`, `data/`, cookies, browser profiles или credentials.

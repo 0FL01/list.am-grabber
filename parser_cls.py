@@ -32,13 +32,25 @@ def run_monitor(config_path: str, once: bool = False) -> int:
             with ListAmScanner() as scanner:
                 listings = scanner.scan(config.search_urls, config.max_pages)
 
-            result = process_listings(
-                listings,
-                state,
-                notifier.notify,
-                notify_existing_on_first_run=config.notify_existing_on_first_run,
-                delivery_jitter_seconds=(1.0, 2.0),
-            )
+                def add_dates(listing):
+                    try:
+                        return scanner.add_dates(listing)
+                    except Exception as error:
+                        logger.warning(
+                            "date extraction failed for listing {}: {}",
+                            listing.id,
+                            error,
+                        )
+                        return listing
+
+                result = process_listings(
+                    listings,
+                    state,
+                    notifier.notify,
+                    enrich=add_dates,
+                    notify_existing_on_first_run=config.notify_existing_on_first_run,
+                    delivery_jitter_seconds=(1.0, 2.0),
+                )
             logger.info(
                 "scan parsed={} baselined={} delivered={} unchanged={}",
                 len(listings),

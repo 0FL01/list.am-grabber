@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -77,6 +78,10 @@ class PipelineTest(unittest.TestCase):
                     [first, second],
                     notify_existing_state,
                     initial_delivery.append,
+                    enrich=lambda listing: replace(
+                        listing,
+                        published_text="Размещено 10.12.2023",
+                    ),
                     notify_existing_on_first_run=True,
                     delivery_jitter_seconds=(1.0, 2.0),
                 )
@@ -84,6 +89,10 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(
                 [listing.id for listing in initial_delivery],
                 ["111", "222"],
+            )
+            self.assertEqual(
+                initial_delivery[0].published_text,
+                "Размещено 10.12.2023",
             )
             sleep.assert_called_once_with(1.5)
 

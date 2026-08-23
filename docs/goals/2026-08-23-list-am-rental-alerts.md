@@ -65,6 +65,13 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Status: verified
   - Evidence: Ten focused tests pass for first-10 extraction, one-caption album payload, single-photo delivery, and text fallback; generated live URL `https://img.list.am/f/897/100886897.webp` returned HTTP 200 as a 720×960 image; the final Docker image builds.
 
+- R8: Show List.am publication and update dates in Telegram alerts.
+  - Source: User: "добавить отображение даты публикации/обновления в лоте телеграмм".
+  - Acceptance: New or price-changed listings include the Russian `Размещено` date and, when present, the `Обновлено` date from the public List.am detail footer; enrichment failure does not suppress the alert.
+  - Primary evidence: Focused detail fixture/Telegram tests and a live Docker date-enrichment smoke.
+  - Status: verified
+  - Evidence: Ten tests pass; live Docker enrichment returned `Размещено 23.08.2026` for listing `24136622` without authentication.
+
 ### Constraints
 
 - C1: Use a headless browser in Docker; do not require List.am authorization or prepared cookies.
@@ -92,15 +99,15 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R1-R7.
+- Closes: R1-R8.
 - Smallest next action: None; closure evidence is current.
 - Expected evidence: All required outcomes are verified.
 - Stop or replan if: A final diff check fails.
 
 ## Current State
 
-- Resolved: R1-R5 and R7 are verified; R6 is superseded by the no-phone KISS decision.
-- Last relevant evidence: Nine tests pass; active runtime no longer opens detail pages or calls the authorization-gated phone endpoint.
+- Resolved: R1-R5 and R7-R8 are verified; R6 is superseded by the no-phone KISS decision.
+- Last relevant evidence: Ten tests pass; live Docker date enrichment returned the Russian publication date without authentication.
 - Blocker: None.
 - Next: None.
 
@@ -121,6 +128,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Space multi-alert batches with a random 1-2 second delay between successful Telegram deliveries; do not delay a single alert or sleep after the last item.
 - 2026-08-23: Remove phone acquisition entirely after the user chose KISS over introducing List.am authorization; alerts retain the direct listing link.
 - 2026-08-23: Create and close a fresh Playwright browser/context for each poll. Remote evidence showed the first scan succeeds, the reused context becomes persistently blocked, and a fresh context immediately restores all 96 cards.
+- 2026-08-23: Enrich only alert candidates from the public detail footer with List.am's Russian `Размещено` and `Обновлено` values; date failure remains non-fatal and does not suppress the alert.
 
 ## Checkpoint History
 
@@ -139,10 +147,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Remote production diagnosis isolated Cloudflare blocking to `chromium-headless-shell`; full headless Chromium passed twice with 105 cards, so Docker packaging and launch now pin the full browser executable.
 - 2026-08-23: The tracked config example now demonstrates two independent regional search URLs and documents per-URL `max_pages` behavior.
 - 2026-08-23: R6 superseded by explicit user instruction. Phone code and detail-page navigation were removed after remote verification showed `/rtam` requires authorization.
+- 2026-08-23: R8 verified. The public detail footer produced `Размещено 23.08.2026`; fixture and Telegram formatting tests cover both publication and update dates.
 
 ## Completion
 
-- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 superseded; R7 grouped listing photos within Telegram limits.
-- Commands and artifacts: `python -m unittest discover -s tests` (9 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live generated List.am image HTTP 200.
-- Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 superseded; R7 grouped listing photos; R8 publication/update dates in alerts.
+- Commands and artifacts: `python -m unittest discover -s tests` (10 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live generated List.am image HTTP 200; live Russian publication-date enrichment.
+- Constraint and diff-scope check: Active runtime contains no VK, XLSX, full detail parsing, phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
 - Final status: complete

@@ -18,6 +18,15 @@ class CategoryPage:
     next_url: str | None
 
 
+def parse_listing_dates(html: str) -> tuple[str, str]:
+    soup = BeautifulSoup(html, "html.parser")
+    published_element = soup.select_one('[itemprop="datePosted"]')
+    if not published_element:
+        return "", ""
+    updated_element = published_element.find_next_sibling("span")
+    return _text(published_element), _text(updated_element)
+
+
 def parse_category_page(html: str, current_url: str) -> CategoryPage:
     soup = BeautifulSoup(html, "html.parser")
     listings = []
