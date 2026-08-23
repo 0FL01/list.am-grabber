@@ -35,7 +35,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Acceptance: A fresh container with no List.am cookie/profile mount opens a configured category search and parses its cards using headless Chromium.
   - Primary evidence: Production-like Docker smoke command and observed parsed-listing counter; a Cloudflare challenge is a failure, not an empty successful scan.
   - Status: in_progress
-  - Evidence: Current upstream Docker/runtime does not establish this contract; a bounded feasibility probe is the first checkpoint.
+  - Evidence: In a fresh upstream container, vanilla Playwright returned HTTP 403 with title `Один момент…`; the bounded probe using the already-installed `playwright-stealth` returned HTTP 200 and found 105 listing cards without login or cookie/profile mounts.
 
 - R4: Provide a repeatable monitoring container configuration.
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R3.
-- Smallest next action: Run a disposable production-like headless Playwright probe against one broad List.am rental category from a fresh browser context, first with vanilla Playwright and, only if blocked, one bounded probe with the already-present stealth mechanism.
-- Expected evidence: At least one `favorite-ad-card-*` element is found without login/cookie preparation, or an exact Cloudflare/block outcome proves the contract blocked in this environment.
-- Stop or replan if: Both bounded probes reach a Cloudflare challenge; do not build proxy, CAPTCHA, login, or cookie-persistence machinery.
+- Closes: Parser-fixture portion of R1.
+- Smallest next action: Add the minimal listing model and a pure category-card parser with one deterministic HTML fixture covering stable ID/link extraction, displayed price, summary, pagination, and duplicate IDs.
+- Expected evidence: A focused stdlib test passes without browser or network access.
+- Stop or replan if: Live recon fields cannot be represented by the frozen minimal model without detail-page navigation.
 
 ## Current State
 
-- Resolved: Upstream source is present at commit `a3ebe93579bd25e2b3e8ccf7529c65d920c85ac8`; the scope and minimum alert workflow are frozen.
-- Last relevant evidence: Browser-assisted recon found server-rendered List.am cards and stable `data-testid` attributes, but an independent headless diagnostic reported a Cloudflare challenge; production Docker feasibility remains unresolved.
-- Blocker: None while the bounded feasibility probe remains untried as the current checkpoint.
-- Next: Execute the R3 probe and update this document with the result before product implementation.
+- Resolved: Upstream source is present; scope is frozen; the required headless/no-auth acquisition path is feasible with the existing stealth dependency.
+- Last relevant evidence: Docker probe against `https://www.list.am/ru/category/56` returned HTTP 200 and 105 cards under headless Chromium with stealth and no persisted browser state.
+- Blocker: None.
+- Next: Implement and verify the pure card parser before wiring browser runtime or delivery state.
 
 ## Material Decisions
 
@@ -88,10 +88,12 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: First successful full scan creates a no-alert baseline to avoid an initial alert flood.
 - 2026-08-23: Keep one state row per listing with its last handled displayed-price key; persist a new key only after successful Telegram delivery.
 - 2026-08-23: Adapt only the active runtime. Dormant upstream GUI/Avito files are not a cleanup objective.
+- 2026-08-23: Vanilla headless Chromium is blocked in the current Docker environment; use the existing `playwright-stealth` integration without adding broader bypass infrastructure.
 
 ## Checkpoint History
 
 - 2026-08-23: Contract frozen from the user request and audited minimal plan. Next checkpoint is the Docker/headless feasibility gate for R3.
+- 2026-08-23: R3 feasibility gate passed with existing stealth support: HTTP 200 and 105 cards in a fresh headless container; vanilla headless returned Cloudflare HTTP 403. Next checkpoint is the deterministic card parser.
 
 ## Completion
 
