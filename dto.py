@@ -4,6 +4,20 @@ from typing import List, Optional
 
 
 @dataclass(frozen=True)
+class AnalystConfig:
+    enabled: bool = False
+    base_url: str = ""
+    api_key: str = ""
+    model: str = ""
+    vision: bool = True
+    reasoning_effort: str = ""
+    max_images: int = 0
+    max_completion_tokens: int = 0
+    retries: int = 3
+    prompt: str = ""
+
+
+@dataclass(frozen=True)
 class ListAmConfig:
     search_urls: List[str]
     telegram_bot_token: str
@@ -12,6 +26,7 @@ class ListAmConfig:
     max_pages: int = 1
     poll_interval_seconds: int = 60
     database_path: Path = Path("data/listings.db")
+    analyst: AnalystConfig = field(default_factory=AnalystConfig)
 
 
 @dataclass
