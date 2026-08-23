@@ -1,6 +1,7 @@
 import sqlite3
+from pathlib import Path
 
-from models import Item
+from models import Item, RentalListing
 
 
 class SQLiteDBHandler:
@@ -67,3 +68,58 @@ class SQLiteDBHandler:
                 (record_id, price),
             )
             return cursor.fetchone() is not None
+
+
+class ListingStateStore:
+    _BASELINE_MARKER = "__baseline__"
+
+    def __init__(self, db_name: str):
+        self.db_name = db_name
+        Path(db_name).parent.mkdir(parents=True, exist_ok=True)
+        self._create_table()
+
+    def _create_table(self) -> None:
+        with sqlite3.connect(self.db_name) as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS listing_state (
+                    listing_id TEXT PRIMARY KEY,
+                    price_key TEXT NOT NULL
+                )
+                """
+            )
+
+    def is_initialized(self) -> bool:
+        return self.get_price_key(self._BASELINE_MARKER) is not None
+
+    def initialize(self, listings: list[RentalListing]) -> None:
+        records = [(listing.id, listing.price_key) for listing in listings]
+        records.append((self._BASELINE_MARKER, "1"))
+        with sqlite3.connect(self.db_name) as conn:
+            conn.executemany(
+                """
+                INSERT INTO listing_state (listing_id, price_key)
+                VALUES (?, ?)
+                ON CONFLICT(listing_id) DO UPDATE SET price_key = excluded.price_key
+                """,
+                records,
+            )
+
+    def get_price_key(self, listing_id: str) -> str | None:
+        with sqlite3.connect(self.db_name) as conn:
+            row = conn.execute(
+                "SELECT price_key FROM listing_state WHERE listing_id = ?",
+                (listing_id,),
+            ).fetchone()
+        return row[0] if row else None
+
+    def save(self, listing: RentalListing) -> None:
+        with sqlite3.connect(self.db_name) as conn:
+            conn.execute(
+                """
+                INSERT INTO listing_state (listing_id, price_key)
+                VALUES (?, ?)
+                ON CONFLICT(listing_id) DO UPDATE SET price_key = excluded.price_key
+                """,
+                (listing.id, listing.price_key),
+            )

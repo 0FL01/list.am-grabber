@@ -27,8 +27,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User: "VK не нужен, только телеграмм бот для объявлений" and instruction to proceed with the audited minimal plan.
   - Acceptance: After initial baseline, a new listing or changed displayed price sends one text alert with a List.am link; unchanged listings do not resend; failed delivery is retried because it is not persisted as handled.
   - Primary evidence: Pipeline test with a temporary SQLite database and fake notifier covering baseline, unchanged, new, changed-price, and failed-delivery cases.
-  - Status: pending
-  - Evidence:
+  - Status: in_progress
+  - Evidence: `python -m unittest discover -s tests -p 'test_pipeline.py'` passes for initial baseline, unchanged suppression, new listing, changed price, and failed delivery remaining retryable.
 
 - R3: Run through a headless browser in Docker without List.am login or prepared cookies.
   - Source: User: "конечное решение должно работать с headless браузером и без авторизации в докер контейнере".
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Deterministic delivery-state portion of R2.
-- Smallest next action: Replace the active viewed-state contract with one SQLite row per listing and add a Telegram-independent monitor pipeline test for baseline, unchanged, new, changed-price, and failed-delivery behavior.
-- Expected evidence: A focused stdlib test passes with a temporary SQLite database and fake notifier.
-- Stop or replan if: Correct retry behavior requires a queue, delivery service, or additional persistent state beyond the single allowed table.
+- Closes: Telegram transport portion of R2.
+- Smallest next action: Add a text-only Telegram notifier for `RentalListing` with a short escaped link message and delivery failures propagated to the pipeline.
+- Expected evidence: A focused stdlib test verifies the Bot API payload and failure propagation without a real external send.
+- Stop or replan if: Telegram delivery requires an image, phone scrape, notifier abstraction, or another service to produce a useful alert.
 
 ## Current State
 
-- Resolved: Scope is frozen; headless/no-auth acquisition is feasible; the minimal card model and deterministic category parser are implemented.
-- Last relevant evidence: The focused category parser fixture test passes.
+- Resolved: Scope is frozen; headless/no-auth acquisition is feasible; card parsing and per-listing SQLite delivery semantics are implemented.
+- Last relevant evidence: The focused delivery-state test passes with a temporary SQLite database and fake notifier.
 - Blocker: None.
-- Next: Implement delivery state and per-listing notification semantics behind a fake notifier.
+- Next: Implement the minimal Telegram-only transport before wiring the browser monitor.
 
 ## Material Decisions
 
@@ -95,6 +95,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Contract frozen from the user request and audited minimal plan. Next checkpoint is the Docker/headless feasibility gate for R3.
 - 2026-08-23: R3 feasibility gate passed with existing stealth support: HTTP 200 and 105 cards in a fresh headless container; vanilla headless returned Cloudflare HTTP 403. Next checkpoint is the deterministic card parser.
 - 2026-08-23: R1 parser fixture checkpoint passed. The parser uses category-card data only and preserves actual pagination query parameters. Next checkpoint is R2 delivery state.
+- 2026-08-23: R2 state checkpoint passed. A single SQLite table baselines the first scan, suppresses unchanged listings, alerts price changes, and records state only after notifier success. Next checkpoint is Telegram transport.
 
 ## Completion
 
