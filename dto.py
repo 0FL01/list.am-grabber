@@ -11,6 +11,7 @@ class AnalystConfig:
     model: str = ""
     vision: bool = True
     reasoning_effort: str = ""
+    reply_format: str = "plain"
     max_images: int = 0
     max_completion_tokens: int = 0
     retries: int = 3

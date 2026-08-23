@@ -1,5 +1,6 @@
 beautifulsoup4==4.13.4
 loguru==0.7.0
+markdown-it-py==4.2.0
 playwright==1.52.0
 playwright-stealth==2.0.0
 pydantic==2.9.2

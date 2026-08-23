@@ -73,6 +73,10 @@ def _load_analyst_config(section) -> AnalystConfig:
     if type(vision) is not bool:
         raise ValueError("analyst.vision must be a boolean")
 
+    reply_format = section.get("reply_format", "plain")
+    if not isinstance(reply_format, str) or reply_format not in {"plain", "markdown"}:
+        raise ValueError("analyst.reply_format must be plain or markdown")
+
     numeric_values = {}
     for name, default in (
         ("max_images", 0),
@@ -105,6 +109,7 @@ def _load_analyst_config(section) -> AnalystConfig:
     return AnalystConfig(
         enabled=True,
         vision=vision,
+        reply_format=reply_format,
         **string_values,
         **numeric_values,
     )

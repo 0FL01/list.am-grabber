@@ -8,7 +8,7 @@ RUN python -m playwright install --with-deps chromium
 
 COPY parser_cls.py analyst.py db_service.py dto.py load_config.py models.py /app/
 COPY parser/__init__.py parser/browser.py parser/list_am.py parser/pipeline.py /app/parser/
-COPY integrations/notifications/__init__.py integrations/notifications/list_am_telegram.py /app/integrations/notifications/
+COPY integrations/notifications/__init__.py integrations/notifications/list_am_telegram.py integrations/notifications/telegram_markdown.py /app/integrations/notifications/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

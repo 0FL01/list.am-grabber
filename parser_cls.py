@@ -27,9 +27,10 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     analyst = AnalystClient(config.analyst) if config.analyst.enabled else None
     if analyst:
         logger.info(
-            "analyst enabled model={} vision={} max_images={} max_completion_tokens={} retries={}",
+            "analyst enabled model={} vision={} reply_format={} max_images={} max_completion_tokens={} retries={}",
             config.analyst.model,
             config.analyst.vision,
+            config.analyst.reply_format,
             config.analyst.max_images or "all",
             config.analyst.max_completion_tokens or "provider-default",
             config.analyst.retries,
@@ -84,6 +85,7 @@ def run_monitor(config_path: str, once: bool = False) -> int:
                     analysis_jobs,
                     stop_event,
                     config.analyst.model,
+                    config.analyst.reply_format,
                 )
         except Exception as error:
             logger.error("scan failed: {}", error)
@@ -103,6 +105,7 @@ def _run_analyses(
     jobs: list[tuple],
     stop_event: Event,
     model: str,
+    reply_format: str = "plain",
 ) -> None:
     for listing, message_id in jobs:
         if stop_event.is_set():
@@ -128,7 +131,7 @@ def _run_analyses(
             continue
 
         try:
-            reply_id = notifier.reply(message_id, result.text)
+            reply_id = notifier.reply(message_id, result.text, reply_format)
         except Exception as error:
             logger.warning(
                 "analyst reply failed listing={} reply_to={} error_type={}",

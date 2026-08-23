@@ -97,7 +97,7 @@ class RuntimeTest(unittest.TestCase):
             )
 
         analyst.analyze.side_effect = analyze
-        notifier.reply.side_effect = lambda message_id, _text: events.append(
+        notifier.reply.side_effect = lambda message_id, _text, _format: events.append(
             f"reply:{message_id}"
         ) or message_id + 1
 
@@ -161,7 +161,7 @@ class RuntimeTest(unittest.TestCase):
 
         self.assertEqual(analyst.analyze.call_count, 3)
         self.assertEqual(notifier.reply.call_count, 2)
-        self.assertEqual(notifier.reply.call_args.args, (3, "Вердикт"))
+        self.assertEqual(notifier.reply.call_args.args, (3, "Вердикт", "plain"))
 
     def test_disabled_analyst_does_not_create_client(self):
         events = []

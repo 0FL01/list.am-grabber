@@ -167,6 +167,56 @@ class TelegramNotifierTest(unittest.TestCase):
             4096,
         )
 
+    def test_reply_renders_markdown_as_sanitized_telegram_html(self):
+        markdown = """# Вердикт
+
+**Плюс** и *риск*, `код`, [ссылка](https://example.com).
+
+- первый
+- второй
+
+<script>unsafe</script>
+"""
+        with patch(
+            "integrations.notifications.list_am_telegram.requests.post",
+            return_value=telegram_response({"message_id": 601}),
+        ) as post:
+            reply_id = TelegramNotifier("token", "chat").reply(
+                501,
+                markdown,
+                "markdown",
+            )
+
+        self.assertEqual(reply_id, 601)
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["parse_mode"], "HTML")
+        self.assertIn("<b>Вердикт</b>", payload["text"])
+        self.assertIn("<b>Плюс</b>", payload["text"])
+        self.assertIn("<i>риск</i>", payload["text"])
+        self.assertIn("<code>код</code>", payload["text"])
+        self.assertIn('<a href="https://example.com">ссылка</a>', payload["text"])
+        self.assertIn("• первый", payload["text"])
+        self.assertIn("&lt;script&gt;unsafe&lt;/script&gt;", payload["text"])
+        self.assertNotIn("<script>", payload["text"])
+
+    def test_long_markdown_falls_back_to_limited_plain_text(self):
+        with patch(
+            "integrations.notifications.list_am_telegram.requests.post",
+            return_value=telegram_response({"message_id": 701}),
+        ) as post:
+            TelegramNotifier("token", "chat").reply(
+                501,
+                f"**{'😀' * 3000}**",
+                "markdown",
+            )
+
+        payload = post.call_args.kwargs["json"]
+        self.assertNotIn("parse_mode", payload)
+        self.assertLessEqual(
+            len(payload["text"].encode("utf-16-le")) // 2,
+            4096,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -79,6 +79,7 @@ api_key = "secret"
 model = "provider/custom-model"
 vision = true
 reasoning_effort = "provider-effort"
+reply_format = "markdown"
 max_images = 2
 max_completion_tokens = 4096
 retries = 4
@@ -88,6 +89,7 @@ prompt = "Проверь лот"
 
         self.assertEqual(config.model, "provider/custom-model")
         self.assertEqual(config.reasoning_effort, "provider-effort")
+        self.assertEqual(config.reply_format, "markdown")
         self.assertEqual(config.max_images, 2)
         self.assertEqual(config.retries, 4)
 
@@ -98,6 +100,8 @@ prompt = "Проверь лот"
             '[analyst]\nenabled = true\nbase_url = "https://user@llm.example/v1"\nmodel = "m"\nreasoning_effort = "high"\nprompt = "p"',
             '[analyst]\nenabled = true\nbase_url = "https://llm.example/v1?x=1"\nmodel = "m"\nreasoning_effort = "high"\nprompt = "p"',
             '[analyst]\nenabled = true\nbase_url = "https://llm.example/v1"\nmodel = "m"\nvision = 1\nreasoning_effort = "high"\nprompt = "p"',
+            '[analyst]\nenabled = true\nbase_url = "https://llm.example/v1"\nmodel = "m"\nreasoning_effort = "high"\nreply_format = "html"\nprompt = "p"',
+            '[analyst]\nenabled = true\nbase_url = "https://llm.example/v1"\nmodel = "m"\nreasoning_effort = "high"\nreply_format = ["markdown"]\nprompt = "p"',
             '[analyst]\nenabled = true\nbase_url = "https://llm.example/v1"\nmodel = "m"\nreasoning_effort = "high"\nmax_images = -1\nprompt = "p"',
         )
         for section in invalid_sections:

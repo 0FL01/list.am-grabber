@@ -4,6 +4,7 @@ from html import escape
 import requests
 from loguru import logger
 
+from integrations.notifications.telegram_markdown import render_telegram_markdown
 from models import RentalListing
 
 
@@ -38,23 +39,44 @@ class TelegramNotifier:
         )
         return _message_id(result)
 
-    def reply(self, message_id: int, text: str) -> int | None:
+    def reply(
+        self,
+        message_id: int,
+        text: str,
+        reply_format: str = "plain",
+    ) -> int | None:
         if type(message_id) is not int or message_id < 1:
             raise ValueError("Telegram reply message ID must be a positive integer")
         text = text.strip()
         if not text:
             return None
-        truncated = truncate_telegram_text(text)
-        if truncated != text:
+        parse_mode = None
+        if reply_format == "markdown":
+            try:
+                rendered, plain_text = render_telegram_markdown(text)
+            except Exception as error:
+                logger.warning(
+                    "Telegram Markdown conversion failed reply_to={} error_type={}",
+                    message_id,
+                    type(error).__name__,
+                )
+            else:
+                if _utf16_length(plain_text) <= MAX_MESSAGE_LENGTH:
+                    text = rendered
+                    parse_mode = "HTML"
+                else:
+                    text = plain_text
+        truncated = truncate_telegram_text(text) if parse_mode is None else text
+        if parse_mode is None and truncated != text:
             logger.warning("Telegram analyst reply truncated reply_to={}", message_id)
-        result = self._request(
-            "sendMessage",
-            {
-                "chat_id": self.chat_id,
-                "text": truncated,
-                "reply_parameters": {"message_id": message_id},
-            },
-        )
+        payload = {
+            "chat_id": self.chat_id,
+            "text": truncated,
+            "reply_parameters": {"message_id": message_id},
+        }
+        if parse_mode:
+            payload["parse_mode"] = parse_mode
+        result = self._request("sendMessage", payload)
         return _message_id(result)
 
     def _send_images(self, image_urls: tuple[str, ...], caption: str) -> int:
