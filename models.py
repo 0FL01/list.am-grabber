@@ -11,6 +11,7 @@ class RentalListing:
     price_text: str = ""
     summary: str = ""
     seller_label: str = ""
+    phone: str = ""
 
     @property
     def price_key(self) -> str:

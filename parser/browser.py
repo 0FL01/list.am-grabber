@@ -1,8 +1,10 @@
+from dataclasses import replace
+
 from playwright.sync_api import sync_playwright
 from playwright_stealth import Stealth
 
 from models import RentalListing
-from parser.list_am import parse_category_page
+from parser.list_am import normalize_phone, parse_category_page
 
 
 class ScanError(RuntimeError):
@@ -68,6 +70,31 @@ class ListAmScanner:
                 current_url = parsed_page.next_url
 
         return list(listings.values())
+
+    def add_phone(self, listing: RentalListing) -> RentalListing:
+        self.page.goto(
+            listing.url,
+            wait_until="domcontentloaded",
+            timeout=60_000,
+        )
+        self._wait_for_challenge()
+        if self._is_challenge():
+            raise ScanError("List.am blocked phone extraction")
+
+        phone_link = self.page.locator(
+            'a[data-testid="listing-phone-number-link"], a[href^="tel:"]'
+        ).first
+        if not phone_link.count():
+            reveal_button = self.page.locator(
+                '[data-testid="listing-phone-reveal-button"]'
+            ).first
+            if not reveal_button.count():
+                return listing
+            reveal_button.click()
+            phone_link.wait_for(state="attached", timeout=10_000)
+
+        phone = normalize_phone(phone_link.get_attribute("href") or "")
+        return replace(listing, phone=phone) if phone else listing
 
     def _wait_for_challenge(self) -> None:
         for _ in range(15):

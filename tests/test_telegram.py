@@ -16,6 +16,7 @@ class TelegramNotifierTest(unittest.TestCase):
             price_text="250,000 ֏ в месяц",
             summary="2 комнаты & кабинет",
             seller_label="Собственник",
+            phone="+37493939319",
         )
 
     def test_formats_and_sends_text_alert(self):
@@ -33,6 +34,7 @@ class TelegramNotifierTest(unittest.TestCase):
         self.assertIn("https://www.list.am/ru/item/111", payload["text"])
         self.assertIn("Квартира &lt;центр&gt;", payload["text"])
         self.assertIn("2 комнаты &amp; кабинет", payload["text"])
+        self.assertIn("Телефон: <code>+37493939319</code>", payload["text"])
         response.raise_for_status.assert_called_once_with()
 
     def test_sanitizes_transport_failure(self):

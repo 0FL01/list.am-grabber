@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from db_service import ListingStateStore
@@ -38,6 +39,20 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(result.delivered, 1)
             self.assertEqual([listing.id for listing in delivered], ["222"])
 
+            third = RentalListing(
+                id="333",
+                url="https://www.list.am/ru/item/333",
+                title="Квартира с телефоном",
+            )
+            result = process_listings(
+                [third],
+                state,
+                delivered.append,
+                prepare=lambda listing: replace(listing, phone="+37493939319"),
+            )
+            self.assertEqual(result.delivered, 1)
+            self.assertEqual(delivered[-1].phone, "+37493939319")
+
             cheaper_first = RentalListing(
                 id=first.id,
                 url=first.url,
@@ -49,8 +64,8 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(state.get_price_key(first.id), "AMD:230000")
 
             failed = RentalListing(
-                id="333",
-                url="https://www.list.am/ru/item/333",
+                id="444",
+                url="https://www.list.am/ru/item/444",
                 title="Квартира с ошибкой доставки",
             )
 

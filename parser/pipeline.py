@@ -16,6 +16,7 @@ def process_listings(
     listings: list[RentalListing],
     state: ListingStateStore,
     notify: Callable[[RentalListing], None],
+    prepare: Callable[[RentalListing], RentalListing] | None = None,
 ) -> ProcessingResult:
     unique_listings = list({listing.id: listing for listing in listings}.values())
 
@@ -30,7 +31,8 @@ def process_listings(
             unchanged += 1
             continue
 
-        notify(listing)
+        prepared_listing = prepare(listing) if prepare else listing
+        notify(prepared_listing)
         state.save(listing)
         delivered += 1
 

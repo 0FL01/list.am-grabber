@@ -51,6 +51,13 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Status: verified
   - Evidence: Focused config tests pass; `config.toml` is ignored and untracked; `config.example.toml` is tracked; compose has no Telegram environment entries.
 
+- R6: Include a callable Armenian phone number in alerts when List.am exposes one.
+  - Source: User: "номер телефона извлекать" in format `+37493939319` and make it copyable with one backtick pair.
+  - Acceptance: Before sending a new or price-changed listing, runtime reveals its first available phone without login, normalizes Armenian local numbers to `+374...`, and renders it as a Telegram inline-code value; missing phone does not suppress the alert.
+  - Primary evidence: Phone normalization and Telegram formatting tests plus one live headless phone-reveal smoke.
+  - Status: verified
+  - Evidence: Eight focused tests pass; a fresh Docker headless context, retried once after the normal Cloudflare interval, revealed listing `24138361` as `+37455502560` without login or prepared cookies.
+
 ### Constraints
 
 - C1: Use a headless browser in Docker; do not require List.am authorization or prepared cookies.
@@ -62,7 +69,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ### Non-goals
 
-- Scraping phone numbers, full detail pages, or full image galleries.
+- Full detail-page parsing or full image galleries.
 - XLSX export, VK notifications, GUI support, or Avito compatibility in the active runtime.
 - Currency conversion, proxy rotation, CAPTCHA services, account login, or a generic crawler framework.
 - Physical cleanup or cosmetic renaming of every dormant upstream file.
@@ -77,15 +84,15 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R1-R5.
-- Smallest next action: None; run the closure check and stop.
-- Expected evidence: All required outcomes are verified with current focused and Docker evidence.
-- Stop or replan if: A closure command fails because of the final diff.
+- Closes: R1-R6.
+- Smallest next action: None; closure evidence is current.
+- Expected evidence: All required outcomes are verified.
+- Stop or replan if: A final diff check fails.
 
 ## Current State
 
-- Resolved: R1-R5 are verified.
-- Last relevant evidence: Seven focused tests pass; compose config has no Telegram environment entries; Git ignores `config.toml` but not `config.example.toml`.
+- Resolved: R1-R6 are verified.
+- Last relevant evidence: Eight tests pass and Docker headless phone reveal returned `+37455502560` without authorization or prepared browser state.
 - Blocker: None.
 - Next: None.
 
@@ -99,6 +106,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Vanilla headless Chromium is blocked in the current Docker environment; use the existing `playwright-stealth` integration without adding broader bypass infrastructure.
 - 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed headless-shell dependencies; the matching official Playwright image was disproportionately large for this personal monitor and its pull exceeded the bounded build attempt.
 - 2026-08-23: Store Telegram credentials in ignored `config.toml`; track only `config.example.toml` and remove Telegram environment wiring from Compose.
+- 2026-08-23: Reveal a phone only for listings selected for delivery, normalize the first Armenian number to `+374...`, and render it with Telegram inline-code semantics; phone failure remains non-fatal.
 
 ## Checkpoint History
 
@@ -112,10 +120,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R4 Docker delivery is implemented and verified except for the production-interval two-cycle lifecycle check. Build, `pip check`, compose config, secret-safe image inspection, and a 105-card live one-shot pass.
 - 2026-08-23: R4 lifecycle verified. At the production interval the monitor continued after a transient blocked scan, completed the next scan with 105 cards, and handled SIGTERM cleanly. Closure checks pass.
 - 2026-08-23: R5 verified. Telegram credentials moved from environment variables to ignored `config.toml`; the tracked example contains empty values.
+- 2026-08-23: R6 verified. Phone normalization/inline-code tests pass; Docker headless reveal produced `+37455502560` without List.am authorization.
 
 ## Completion
 
-- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example.
-- Commands and artifacts: `python -m unittest discover -s tests` (7 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run.
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 normalized copyable Armenian phone numbers in alerts.
+- Commands and artifacts: `python -m unittest discover -s tests` (8 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live phone reveal `+37455502560`.
 - Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
 - Final status: complete

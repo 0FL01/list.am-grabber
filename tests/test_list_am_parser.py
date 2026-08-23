@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from parser.list_am import parse_category_page
+from parser.list_am import normalize_phone, parse_category_page
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -25,6 +25,12 @@ class CategoryParserTest(unittest.TestCase):
             page.next_url,
             "https://www.list.am/category/56/2?price1=100000&price2=300000",
         )
+
+    def test_normalizes_armenian_phone_for_calling(self):
+        self.assertEqual(normalize_phone("tel:093 93-93-19"), "+37493939319")
+        self.assertEqual(normalize_phone("+374 (93) 93-93-19"), "+37493939319")
+        self.assertEqual(normalize_phone("93939319"), "+37493939319")
+        self.assertEqual(normalize_phone("invalid"), "")
 
 
 if __name__ == "__main__":
