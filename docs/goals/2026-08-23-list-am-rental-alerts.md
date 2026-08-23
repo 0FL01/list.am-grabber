@@ -116,6 +116,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Reveal a phone only for listings selected for delivery, normalize the first Armenian number to `+374...`, and render it with Telegram inline-code semantics; phone failure remains non-fatal.
 - 2026-08-23: Send at most the first 10 List.am photos as one Telegram album with one caption; use one photo message for a single image and one text fallback if media delivery fails.
 - 2026-08-23: Keep baseline as the safe default, but allow an explicit first-run mode that sends all current listings and persists each only after successful delivery.
+- 2026-08-23: After one blocked phone reveal, skip phone enrichment for the rest of that scan so bulk delivery continues without repeated 15-second challenge waits.
 
 ## Checkpoint History
 

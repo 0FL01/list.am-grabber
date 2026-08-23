@@ -18,6 +18,7 @@ class ListAmScanner:
         self.browser = None
         self.context = None
         self.page = None
+        self.phone_blocked = False
 
     def __enter__(self):
         self._playwright_context = Stealth().use_sync(sync_playwright())
@@ -73,6 +74,8 @@ class ListAmScanner:
         return list(listings.values())
 
     def add_phone(self, listing: RentalListing) -> RentalListing:
+        if self.phone_blocked:
+            return listing
         self.page.goto(
             listing.url,
             wait_until="domcontentloaded",
@@ -80,6 +83,7 @@ class ListAmScanner:
         )
         self._wait_for_challenge()
         if self._is_challenge():
+            self.phone_blocked = True
             raise ScanError("List.am blocked phone extraction")
 
         phone_link = self.page.locator(
