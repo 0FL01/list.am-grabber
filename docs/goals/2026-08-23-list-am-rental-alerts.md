@@ -20,8 +20,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User: "парсер объявлений для list.am" with scope "снять жильё в аренду для житья и удаленной работы".
   - Acceptance: A configured search is polled and its listing cards are parsed into stable IDs, canonical links, titles, prices, and summaries.
   - Primary evidence: Deterministic parser fixture test plus a live one-shot scan counter showing at least one parsed listing.
-  - Status: pending
-  - Evidence:
+  - Status: in_progress
+  - Evidence: `python -m unittest discover -s tests -p 'test_list_am_parser.py'` passes for stable ID/link extraction, duplicate suppression, normalized price keys, summaries, seller labels, and query-preserving pagination.
 
 - R2: Send Telegram-only alerts without repeatedly alerting an unchanged listing.
   - Source: User: "VK не нужен, только телеграмм бот для объявлений" and instruction to proceed with the audited minimal plan.
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Parser-fixture portion of R1.
-- Smallest next action: Add the minimal listing model and a pure category-card parser with one deterministic HTML fixture covering stable ID/link extraction, displayed price, summary, pagination, and duplicate IDs.
-- Expected evidence: A focused stdlib test passes without browser or network access.
-- Stop or replan if: Live recon fields cannot be represented by the frozen minimal model without detail-page navigation.
+- Closes: Deterministic delivery-state portion of R2.
+- Smallest next action: Replace the active viewed-state contract with one SQLite row per listing and add a Telegram-independent monitor pipeline test for baseline, unchanged, new, changed-price, and failed-delivery behavior.
+- Expected evidence: A focused stdlib test passes with a temporary SQLite database and fake notifier.
+- Stop or replan if: Correct retry behavior requires a queue, delivery service, or additional persistent state beyond the single allowed table.
 
 ## Current State
 
-- Resolved: Upstream source is present; scope is frozen; the required headless/no-auth acquisition path is feasible with the existing stealth dependency.
-- Last relevant evidence: Docker probe against `https://www.list.am/ru/category/56` returned HTTP 200 and 105 cards under headless Chromium with stealth and no persisted browser state.
+- Resolved: Scope is frozen; headless/no-auth acquisition is feasible; the minimal card model and deterministic category parser are implemented.
+- Last relevant evidence: The focused category parser fixture test passes.
 - Blocker: None.
-- Next: Implement and verify the pure card parser before wiring browser runtime or delivery state.
+- Next: Implement delivery state and per-listing notification semantics behind a fake notifier.
 
 ## Material Decisions
 
@@ -94,6 +94,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 - 2026-08-23: Contract frozen from the user request and audited minimal plan. Next checkpoint is the Docker/headless feasibility gate for R3.
 - 2026-08-23: R3 feasibility gate passed with existing stealth support: HTTP 200 and 105 cards in a fresh headless container; vanilla headless returned Cloudflare HTTP 403. Next checkpoint is the deterministic card parser.
+- 2026-08-23: R1 parser fixture checkpoint passed. The parser uses category-card data only and preserves actual pagination query parameters. Next checkpoint is R2 delivery state.
 
 ## Completion
 

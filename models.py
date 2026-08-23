@@ -1,5 +1,35 @@
+from dataclasses import dataclass
 from pydantic import BaseModel, HttpUrl, RootModel
 from typing import List, Optional, Dict, Any
+
+
+@dataclass(frozen=True)
+class RentalListing:
+    id: str
+    url: str
+    title: str
+    price_text: str = ""
+    summary: str = ""
+    seller_label: str = ""
+
+    @property
+    def price_key(self) -> str:
+        compact = " ".join(self.price_text.split())
+        if not compact:
+            return "NO_PRICE"
+
+        currency = next(
+            (
+                code
+                for symbol, code in (("֏", "AMD"), ("$", "USD"), ("€", "EUR"), ("₽", "RUB"))
+                if symbol in compact
+            ),
+            None,
+        )
+        amount = "".join(character for character in compact if character.isdigit())
+        if currency and amount:
+            return f"{currency}:{amount}"
+        return f"TEXT:{compact.casefold()}"
 
 
 class Category(BaseModel):
