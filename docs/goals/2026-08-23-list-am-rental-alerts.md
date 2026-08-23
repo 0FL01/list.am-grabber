@@ -28,7 +28,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Acceptance: After initial baseline, a new listing or changed displayed price sends one text alert with a List.am link; unchanged listings do not resend; failed delivery is retried because it is not persisted as handled.
   - Primary evidence: Pipeline test with a temporary SQLite database and fake notifier covering baseline, unchanged, new, changed-price, and failed-delivery cases.
   - Status: in_progress
-  - Evidence: `python -m unittest discover -s tests -p 'test_pipeline.py'` passes for initial baseline, unchanged suppression, new listing, changed price, and failed delivery remaining retryable.
+  - Evidence: Focused pipeline and Telegram tests pass for initial baseline, unchanged suppression, new listing, changed price, failed delivery remaining retryable, escaped text payloads, and sanitized transport failures.
 
 - R3: Run through a headless browser in Docker without List.am login or prepared cookies.
   - Source: User: "конечное решение должно работать с headless браузером и без авторизации в докер контейнере".
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Telegram transport portion of R2.
-- Smallest next action: Add a text-only Telegram notifier for `RentalListing` with a short escaped link message and delivery failures propagated to the pipeline.
-- Expected evidence: A focused stdlib test verifies the Bot API payload and failure propagation without a real external send.
-- Stop or replan if: Telegram delivery requires an image, phone scrape, notifier abstraction, or another service to produce a useful alert.
+- Closes: Runtime portions of R1 and R3.
+- Smallest next action: Add minimal List.am config loading and a sequential Playwright scanner that keeps one stealth-enabled headless context, follows actual pagination links up to `max_pages`, and returns a complete scan or an explicit challenge/source failure.
+- Expected evidence: Focused config/scanner tests plus a live one-shot scan using the new runtime path.
+- Stop or replan if: The verified card parser cannot consume Playwright page content or the bounded stealth path stops passing without login/cookie preparation.
 
 ## Current State
 
-- Resolved: Scope is frozen; headless/no-auth acquisition is feasible; card parsing and per-listing SQLite delivery semantics are implemented.
-- Last relevant evidence: The focused delivery-state test passes with a temporary SQLite database and fake notifier.
+- Resolved: Scope is frozen; acquisition is feasible; card parsing, delivery state, and text-only Telegram transport are implemented independently.
+- Last relevant evidence: `python -m unittest discover -s tests -p 'test_telegram.py'` passes, including sanitized request failures.
 - Blocker: None.
-- Next: Implement the minimal Telegram-only transport before wiring the browser monitor.
+- Next: Implement the configured browser scanner and prove a live one-shot scan through that path.
 
 ## Material Decisions
 
@@ -96,6 +96,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R3 feasibility gate passed with existing stealth support: HTTP 200 and 105 cards in a fresh headless container; vanilla headless returned Cloudflare HTTP 403. Next checkpoint is the deterministic card parser.
 - 2026-08-23: R1 parser fixture checkpoint passed. The parser uses category-card data only and preserves actual pagination query parameters. Next checkpoint is R2 delivery state.
 - 2026-08-23: R2 state checkpoint passed. A single SQLite table baselines the first scan, suppresses unchanged listings, alerts price changes, and records state only after notifier success. Next checkpoint is Telegram transport.
+- 2026-08-23: R2 Telegram checkpoint passed. Alerts are text-only, escaped, linked to List.am, and transport failures do not expose the bot token. Next checkpoint is the configured browser scanner.
 
 ## Completion
 
