@@ -129,6 +129,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Remove phone acquisition entirely after the user chose KISS over introducing List.am authorization; alerts retain the direct listing link.
 - 2026-08-23: Create and close a fresh Playwright browser/context for each poll. Remote evidence showed the first scan succeeds, the reused context becomes persistently blocked, and a fresh context immediately restores all 96 cards.
 - 2026-08-23: Enrich only alert candidates from the public detail footer with List.am's Russian `Размещено` and `Обновлено` values; date failure remains non-fatal and does not suppress the alert.
+- 2026-08-23: Use a fresh short-lived context for each date detail page. Remote evidence showed detail navigation is blocked in the category context, while a new context in the same browser immediately returns the Russian date footer.
 
 ## Checkpoint History
 

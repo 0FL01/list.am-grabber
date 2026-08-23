@@ -18,7 +18,6 @@ class ListAmScanner:
         self.browser = None
         self.context = None
         self.page = None
-        self.details_blocked = False
 
     def __enter__(self):
         self._playwright_context = Stealth().use_sync(sync_playwright())
@@ -74,35 +73,41 @@ class ListAmScanner:
         return list(listings.values())
 
     def add_dates(self, listing: RentalListing) -> RentalListing:
-        if self.details_blocked:
-            return listing
-        self.page.goto(
-            listing.url,
-            wait_until="domcontentloaded",
-            timeout=60_000,
-        )
-        self._wait_for_challenge()
-        if self._is_challenge():
-            self.details_blocked = True
-            raise ScanError("List.am blocked date extraction")
+        detail_context = self.browser.new_context(locale="ru-RU")
+        detail_page = detail_context.new_page()
+        try:
+            detail_page.goto(
+                listing.url,
+                wait_until="domcontentloaded",
+                timeout=60_000,
+            )
+            self._wait_for_challenge(detail_page)
+            if self._is_challenge(detail_page):
+                raise ScanError("List.am blocked date extraction")
 
-        published_text, updated_text = parse_listing_dates(self.page.content())
-        return replace(
-            listing,
-            published_text=published_text,
-            updated_text=updated_text,
-        )
+            published_text, updated_text = parse_listing_dates(
+                detail_page.content()
+            )
+            return replace(
+                listing,
+                published_text=published_text,
+                updated_text=updated_text,
+            )
+        finally:
+            detail_context.close()
 
-    def _wait_for_challenge(self) -> None:
+    def _wait_for_challenge(self, page=None) -> None:
+        page = page or self.page
         for _ in range(15):
-            if not self._is_challenge():
+            if not self._is_challenge(page):
                 return
-            self.page.wait_for_timeout(1_000)
+            page.wait_for_timeout(1_000)
 
-    def _is_challenge(self) -> bool:
-        title = self.page.title().casefold()
+    def _is_challenge(self, page=None) -> bool:
+        page = page or self.page
+        title = page.title().casefold()
         return (
             "один момент" in title
             or "just a moment" in title
-            or "/cdn-cgi/challenge" in self.page.url
+            or "/cdn-cgi/challenge" in page.url
         )
