@@ -6,10 +6,14 @@ from dto import AvitoConfig, ListAmConfig
 
 def load_list_am_config(path: str = "config.toml") -> ListAmConfig:
     with open(path, "rb") as file:
-        section = tomllib.load(file)["list_am"]
+        data = tomllib.load(file)
+    section = data["list_am"]
+    telegram = data["telegram"]
 
     config = ListAmConfig(
         search_urls=section.get("search_urls", []),
+        telegram_bot_token=telegram.get("bot_token", ""),
+        telegram_chat_id=str(telegram.get("chat_id", "")),
         max_pages=section.get("max_pages", 1),
         poll_interval_seconds=section.get("poll_interval_seconds", 60),
         database_path=Path(section.get("database_path", "data/listings.db")),
@@ -23,6 +27,8 @@ def _validate_list_am_config(config: ListAmConfig) -> None:
 
     if not config.search_urls:
         raise ValueError("At least one List.am search URL is required")
+    if not config.telegram_bot_token or not config.telegram_chat_id:
+        raise ValueError("Telegram bot token and chat ID are required")
     for url in config.search_urls:
         parts = urlsplit(url)
         if (

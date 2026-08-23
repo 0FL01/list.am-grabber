@@ -6,6 +6,8 @@ from typing import List, Optional
 @dataclass(frozen=True)
 class ListAmConfig:
     search_urls: List[str]
+    telegram_bot_token: str
+    telegram_chat_id: str
     max_pages: int = 1
     poll_interval_seconds: int = 60
     database_path: Path = Path("data/listings.db")

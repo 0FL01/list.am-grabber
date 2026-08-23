@@ -1,5 +1,4 @@
 import argparse
-import os
 import signal
 from pathlib import Path
 from threading import Event
@@ -16,8 +15,8 @@ from parser.pipeline import process_listings
 def run_monitor(config_path: str, once: bool = False) -> int:
     config = load_list_am_config(config_path)
     notifier = TelegramNotifier(
-        bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
-        chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
+        bot_token=config.telegram_bot_token,
+        chat_id=config.telegram_chat_id,
     )
     state = ListingStateStore(str(config.database_path))
     stop_event = Event()

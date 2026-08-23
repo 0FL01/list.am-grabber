@@ -1,3 +1,7 @@
+[telegram]
+bot_token = ""
+chat_id = ""
+
 [list_am]
 search_urls = [
     "https://www.list.am/ru/category/56",

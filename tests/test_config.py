@@ -11,6 +11,10 @@ class ConfigTest(unittest.TestCase):
             path = Path(directory) / "config.toml"
             path.write_text(
                 """
+[telegram]
+bot_token = "token"
+chat_id = "123"
+
 [list_am]
 search_urls = ["https://www.list.am/ru/category/56?price1=100000"]
 max_pages = 2
@@ -25,12 +29,21 @@ database_path = "data/test.db"
         self.assertEqual(config.max_pages, 2)
         self.assertEqual(config.poll_interval_seconds, 30)
         self.assertEqual(config.database_path, Path("data/test.db"))
+        self.assertEqual(config.telegram_bot_token, "token")
+        self.assertEqual(config.telegram_chat_id, "123")
 
     def test_rejects_non_list_am_url(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "config.toml"
             path.write_text(
-                '[list_am]\nsearch_urls = ["https://example.com/category/56"]',
+                """
+[telegram]
+bot_token = "token"
+chat_id = "123"
+
+[list_am]
+search_urls = ["https://example.com/category/56"]
+""".strip(),
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "Unsupported List.am"):

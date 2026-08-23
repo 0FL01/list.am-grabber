@@ -39,10 +39,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 - R4: Provide a repeatable monitoring container configuration.
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
-  - Acceptance: The local image starts the monitor with read-only search configuration, environment-provided Telegram credentials, persistent SQLite data, no auth/cookie mount, and clean SIGTERM handling.
+  - Acceptance: The local image starts the monitor with read-only configuration, persistent SQLite data, no auth/cookie mount, and clean SIGTERM handling.
   - Primary evidence: Docker build, `docker compose config`, one-shot smoke, and a two-cycle monitor shutdown check.
   - Status: verified
   - Evidence: Local slim-bookworm image builds; `pip check` reports no broken requirements; compose resolves to the local image with config/data mounts and no cookies; image inspection confirms config, Git metadata, environment files, cookies, and databases are absent; live one-shot parsed 105 cards; a production-interval lifecycle run survived a transient blocked scan, succeeded on the next scan with 105 cards, and exited cleanly on SIGTERM.
+
+- R5: Keep Telegram credentials in an ignored local TOML config with a tracked example.
+  - Source: User: "никаких export, переменные храним в config.toml для телеграмма" and "добавь конфиг томл в гит игнор и сделай с припиской example".
+  - Acceptance: Runtime reads Telegram bot token and chat ID from ignored `config.toml`; `config.example.toml` is tracked without secrets; Docker Compose requires no Telegram environment variables.
+  - Primary evidence: Config loader test, Git tracked/ignored file check, and `docker compose config`.
+  - Status: verified
+  - Evidence: Focused config tests pass; `config.toml` is ignored and untracked; `config.example.toml` is tracked; compose has no Telegram environment entries.
 
 ### Constraints
 
@@ -51,6 +58,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - C3: Keep the implementation minimal under KISS, YAGNI, and Pareto.
 - C4: Make repository commits as checkpoints, as explicitly requested by the user.
 - C5: Do not commit Telegram credentials, browser profiles, cookies, or generated databases.
+- C6: Telegram credentials are read from local `config.toml`, not exported environment variables.
 
 ### Non-goals
 
@@ -69,15 +77,15 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R1-R4.
+- Closes: R1-R5.
 - Smallest next action: None; run the closure check and stop.
 - Expected evidence: All required outcomes are verified with current focused and Docker evidence.
 - Stop or replan if: A closure command fails because of the final diff.
 
 ## Current State
 
-- Resolved: R1-R4 are verified.
-- Last relevant evidence: Seven focused tests and `pip check` pass; compose config is valid; the final image one-shot parsed 105 cards; the 60-second lifecycle run recovered from a transient Cloudflare block and exited cleanly after a successful 105-card scan.
+- Resolved: R1-R5 are verified.
+- Last relevant evidence: Seven focused tests pass; compose config has no Telegram environment entries; Git ignores `config.toml` but not `config.example.toml`.
 - Blocker: None.
 - Next: None.
 
@@ -90,6 +98,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Adapt only the active runtime. Dormant upstream GUI/Avito files are not a cleanup objective.
 - 2026-08-23: Vanilla headless Chromium is blocked in the current Docker environment; use the existing `playwright-stealth` integration without adding broader bypass infrastructure.
 - 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed headless-shell dependencies; the matching official Playwright image was disproportionately large for this personal monitor and its pull exceeded the bounded build attempt.
+- 2026-08-23: Store Telegram credentials in ignored `config.toml`; track only `config.example.toml` and remove Telegram environment wiring from Compose.
 
 ## Checkpoint History
 
@@ -102,10 +111,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R1 and R2 verified after active CLI integration. Seven focused tests pass; a fresh Docker one-shot parsed and baselined 104 cards without Telegram side effects. Next checkpoint is R4 Docker delivery.
 - 2026-08-23: R4 Docker delivery is implemented and verified except for the production-interval two-cycle lifecycle check. Build, `pip check`, compose config, secret-safe image inspection, and a 105-card live one-shot pass.
 - 2026-08-23: R4 lifecycle verified. At the production interval the monitor continued after a transient blocked scan, completed the next scan with 105 cards, and handled SIGTERM cleanly. Closure checks pass.
+- 2026-08-23: R5 verified. Telegram credentials moved from environment variables to ignored `config.toml`; the tracked example contains empty values.
 
 ## Completion
 
-- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring.
-- Commands and artifacts: `python -m unittest discover -s tests` (7 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run.
-- Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, or persistent browser profile. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example.
+- Commands and artifacts: `python -m unittest discover -s tests` (7 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run.
+- Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
 - Final status: complete

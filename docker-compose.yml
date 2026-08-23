@@ -3,9 +3,6 @@ services:
     build: .
     image: list-am-search:local
     restart: unless-stopped
-    environment:
-      - TELEGRAM_BOT_TOKEN
-      - TELEGRAM_CHAT_ID
     volumes:
       - ./config.toml:/app/config.toml:ro
       - ./data:/app/data

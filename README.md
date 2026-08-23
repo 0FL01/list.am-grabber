@@ -14,9 +14,19 @@
 
 ## Настройка
 
-Отредактируйте `config.toml`:
+Создайте локальный конфиг из примера:
+
+```bash
+cp config.example.toml config.toml
+```
+
+Заполните Telegram credentials и URL поиска в `config.toml`:
 
 ```toml
+[telegram]
+bot_token = "123456:telegram-bot-token"
+chat_id = "123456789"
+
 [list_am]
 search_urls = [
     "https://www.list.am/ru/category/56",
@@ -27,13 +37,7 @@ database_path = "data/listings.db"
 ```
 
 Фильтры района, цены, комнат и удобств задавайте на List.am и копируйте получившийся URL в `search_urls`.
-
-Перед запуском задайте Telegram credentials только через environment:
-
-```bash
-export TELEGRAM_BOT_TOKEN="..."
-export TELEGRAM_CHAT_ID="..."
-```
+`config.toml` добавлен в `.gitignore`; в Git хранится только `config.example.toml` без секретов.
 
 ## Запуск
 
