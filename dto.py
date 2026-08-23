@@ -3,6 +3,14 @@ from pathlib import Path
 from typing import List, Optional
 
 
+@dataclass(frozen=True)
+class ListAmConfig:
+    search_urls: List[str]
+    max_pages: int = 1
+    poll_interval_seconds: int = 60
+    database_path: Path = Path("data/listings.db")
+
+
 @dataclass
 class Proxy:
     proxy_string: str
@@ -56,4 +64,3 @@ class AvitoConfig:
     retry_delay: int = 5
     timeout: int = 20
     block_threshold: int = 3
-

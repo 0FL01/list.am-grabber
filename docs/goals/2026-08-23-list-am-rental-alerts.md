@@ -21,7 +21,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Acceptance: A configured search is polled and its listing cards are parsed into stable IDs, canonical links, titles, prices, and summaries.
   - Primary evidence: Deterministic parser fixture test plus a live one-shot scan counter showing at least one parsed listing.
   - Status: in_progress
-  - Evidence: `python -m unittest discover -s tests -p 'test_list_am_parser.py'` passes for stable ID/link extraction, duplicate suppression, normalized price keys, summaries, seller labels, and query-preserving pagination.
+  - Evidence: The focused parser/config tests pass; the new `ListAmScanner` parsed 104 unique cards from the configured live search in a fresh Docker image.
 
 - R2: Send Telegram-only alerts without repeatedly alerting an unchanged listing.
   - Source: User: "VK не нужен, только телеграмм бот для объявлений" and instruction to proceed with the audited minimal plan.
@@ -34,8 +34,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User: "конечное решение должно работать с headless браузером и без авторизации в докер контейнере".
   - Acceptance: A fresh container with no List.am cookie/profile mount opens a configured category search and parses its cards using headless Chromium.
   - Primary evidence: Production-like Docker smoke command and observed parsed-listing counter; a Cloudflare challenge is a failure, not an empty successful scan.
-  - Status: in_progress
-  - Evidence: In a fresh upstream container, vanilla Playwright returned HTTP 403 with title `Один момент…`; the bounded probe using the already-installed `playwright-stealth` returned HTTP 200 and found 105 listing cards without login or cookie/profile mounts.
+  - Status: verified
+  - Evidence: `docker build -t list-am-search:dev .` followed by a fresh-container `ListAmScanner` one-shot parsed 104 unique cards using headless Chromium with stealth and no login, cookie file, or browser-profile mount.
 
 - R4: Provide a repeatable monitoring container configuration.
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Runtime portions of R1 and R3.
-- Smallest next action: Add minimal List.am config loading and a sequential Playwright scanner that keeps one stealth-enabled headless context, follows actual pagination links up to `max_pages`, and returns a complete scan or an explicit challenge/source failure.
-- Expected evidence: Focused config/scanner tests plus a live one-shot scan using the new runtime path.
-- Stop or replan if: The verified card parser cannot consume Playwright page content or the bounded stealth path stops passing without login/cookie preparation.
+- Closes: Runtime integration portions of R1 and R2.
+- Smallest next action: Replace the active CLI with a thin monitor loop that loads List.am config, keeps one scanner context across cycles, runs the verified delivery pipeline, reads Telegram credentials from environment variables, supports `--once`, and exits non-zero on one-shot failure.
+- Expected evidence: Existing focused tests remain green and a one-shot CLI run against an empty temporary database completes a live baseline without contacting Telegram.
+- Stop or replan if: Integration requires reintroducing Avito factories, batch notification semantics, or persistent browser credentials.
 
 ## Current State
 
-- Resolved: Scope is frozen; acquisition is feasible; card parsing, delivery state, and text-only Telegram transport are implemented independently.
-- Last relevant evidence: `python -m unittest discover -s tests -p 'test_telegram.py'` passes, including sanitized request failures.
+- Resolved: Scope is frozen; the configured stealth-enabled scanner, parser, delivery state, and text-only Telegram transport work independently; R3 is verified in Docker.
+- Last relevant evidence: Fresh Docker scanner run parsed 104 live cards through the new runtime module.
 - Blocker: None.
-- Next: Implement the configured browser scanner and prove a live one-shot scan through that path.
+- Next: Integrate the modules in the active CLI monitor and verify a live baseline run.
 
 ## Material Decisions
 
@@ -97,6 +97,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R1 parser fixture checkpoint passed. The parser uses category-card data only and preserves actual pagination query parameters. Next checkpoint is R2 delivery state.
 - 2026-08-23: R2 state checkpoint passed. A single SQLite table baselines the first scan, suppresses unchanged listings, alerts price changes, and records state only after notifier success. Next checkpoint is Telegram transport.
 - 2026-08-23: R2 Telegram checkpoint passed. Alerts are text-only, escaped, linked to List.am, and transport failures do not expose the bot token. Next checkpoint is the configured browser scanner.
+- 2026-08-23: R3 verified through the new scanner in a fresh Docker image; 104 live cards parsed without authentication or persisted cookies. Config validation also passes. Next checkpoint is active CLI integration.
 
 ## Completion
 
