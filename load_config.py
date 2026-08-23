@@ -1,8 +1,6 @@
 import tomllib
 from pathlib import Path
 
-import tomli_w
-
 from dto import AvitoConfig, ListAmConfig
 
 
@@ -46,5 +44,7 @@ def load_avito_config(path: str = "config.toml") -> AvitoConfig:
 
 
 def save_avito_config(config: dict):
+    import tomli_w
+
     with Path("config.toml").open("wb") as f:
         tomli_w.dump(config, f)

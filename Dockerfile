@@ -1,36 +1,15 @@
-FROM python:3.11-slim
-LABEL org.opencontainers.image.source=https://github.com/Duff89/parser_avito
+FROM python:3.11-slim-bookworm
 
-RUN apt-get update && apt-get install \
--y --ignore-missing --no-install-recommends --no-install-suggests \
-	libatk-bridge2.0-0t64 \
-	libatk1.0-0t64 \
-	libatspi2.0-0t64 \
-	libcairo2 \
-	libdbus-1-3 \
-	libdrm2 \
-	libgbm1 \
-	libglib2.0-0t64 \
-	libnspr4 \
-	libnss3 \
-	libpango-1.0-0 \
-	libxcomposite1 \
-	libxdamage1 \
-	libxfixes3 \
-	libxrandr2 \
-	libxkbcommon0 \
-	libasound2 \
-	&& apt-get autopurge \
-	&& apt-get clean \
-	&& apt-get distclean
+WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
-WORKDIR /app
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m playwright install --with-deps chromium-headless-shell
 
-RUN python -m playwright install chromium-headless-shell
+COPY parser_cls.py db_service.py dto.py load_config.py models.py /app/
+COPY parser/__init__.py parser/browser.py parser/list_am.py parser/pipeline.py /app/parser/
+COPY integrations/notifications/__init__.py integrations/notifications/list_am_telegram.py /app/integrations/notifications/
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-COPY . /app
-COPY entrypoint.sh /
-
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

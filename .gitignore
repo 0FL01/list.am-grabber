@@ -32,6 +32,7 @@ Thumbs.db
 Desktop.ini
 
 # Runtime data containing cookies or other private data
+data/
 storage/
 cookies.json
 *.sqlite

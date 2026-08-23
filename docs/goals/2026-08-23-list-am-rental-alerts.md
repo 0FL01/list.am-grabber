@@ -41,8 +41,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
   - Acceptance: The local image starts the monitor with read-only search configuration, environment-provided Telegram credentials, persistent SQLite data, no auth/cookie mount, and clean SIGTERM handling.
   - Primary evidence: Docker build, `docker compose config`, one-shot smoke, and a two-cycle monitor shutdown check.
-  - Status: pending
-  - Evidence:
+  - Status: in_progress
+  - Evidence: Local slim-bookworm image builds; `pip check` reports no broken requirements; compose resolves to the local image with config/data mounts and no cookies; image inspection confirms config, Git metadata, environment files, cookies, and databases are absent; live one-shot parsed and baselined 105 cards.
 
 ### Constraints
 
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R4.
-- Smallest next action: Replace the upstream Docker delivery path with a minimal local List.am image and compose service using environment Telegram credentials, read-only config, persistent data, no cookie mounts, a secret-safe build context, and an `exec` entrypoint.
-- Expected evidence: Docker build and `docker compose config` succeed, active dependencies pass `pip check`, and the image contains no local config, Git metadata, cookies, database, or environment file.
-- Stop or replan if: The container requires an auth/profile mount, upstream Avito image, full checkout bind mount, or a second service.
+- Closes: Remaining monitoring-lifecycle portion of R4.
+- Smallest next action: Run the built image for two production-interval scan cycles against temporary state, send SIGTERM during its wait, and confirm both scans succeed and the process exits cleanly.
+- Expected evidence: Two successful scan counter lines followed by exit status 0 after SIGTERM.
+- Stop or replan if: A normal 60-second interval still triggers a repeatable Cloudflare block in the same in-memory browser context.
 
 ## Current State
 
-- Resolved: R1-R3 are verified; the active CLI integrates the scanner, baseline/delivery state, and Telegram notifier in one persistent browser context.
-- Last relevant evidence: All 7 focused tests pass and the active CLI Docker one-shot logged `parsed=104 baselined=104 delivered=0 unchanged=0`.
+- Resolved: R1-R3 are verified; Docker build, dependency integrity, secret-safe image contents, compose wiring, and live one-shot execution are verified for R4.
+- Last relevant evidence: The final slim-bookworm image live one-shot logged `parsed=105 baselined=105 delivered=0 unchanged=0`; an artificial one-second polling test was blocked on its second scan, so the production interval remains to be checked.
 - Blocker: None.
-- Next: Make the Docker/compose delivery path minimal, local, persistent, and secret-safe.
+- Next: Verify two successful scans at the configured 60-second interval and clean SIGTERM handling.
 
 ## Material Decisions
 
@@ -89,6 +89,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Keep one state row per listing with its last handled displayed-price key; persist a new key only after successful Telegram delivery.
 - 2026-08-23: Adapt only the active runtime. Dormant upstream GUI/Avito files are not a cleanup objective.
 - 2026-08-23: Vanilla headless Chromium is blocked in the current Docker environment; use the existing `playwright-stealth` integration without adding broader bypass infrastructure.
+- 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed headless-shell dependencies; the matching official Playwright image was disproportionately large for this personal monitor and its pull exceeded the bounded build attempt.
 
 ## Checkpoint History
 
@@ -99,6 +100,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R2 Telegram checkpoint passed. Alerts are text-only, escaped, linked to List.am, and transport failures do not expose the bot token. Next checkpoint is the configured browser scanner.
 - 2026-08-23: R3 verified through the new scanner in a fresh Docker image; 104 live cards parsed without authentication or persisted cookies. Config validation also passes. Next checkpoint is active CLI integration.
 - 2026-08-23: R1 and R2 verified after active CLI integration. Seven focused tests pass; a fresh Docker one-shot parsed and baselined 104 cards without Telegram side effects. Next checkpoint is R4 Docker delivery.
+- 2026-08-23: R4 Docker delivery is implemented and verified except for the production-interval two-cycle lifecycle check. Build, `pip check`, compose config, secret-safe image inspection, and a 105-card live one-shot pass.
 
 ## Completion
 
