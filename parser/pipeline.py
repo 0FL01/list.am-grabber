@@ -3,6 +3,8 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from loguru import logger
+
 from db_service import ListingStateStore
 from models import RentalListing
 
@@ -17,8 +19,9 @@ class ProcessingResult:
 def process_listings(
     listings: list[RentalListing],
     state: ListingStateStore,
-    notify: Callable[[RentalListing], None],
+    notify: Callable[[RentalListing], int],
     enrich: Callable[[RentalListing], RentalListing] | None = None,
+    after_delivery: Callable[[RentalListing, int], None] | None = None,
     notify_existing_on_first_run: bool = False,
     delivery_jitter_seconds: tuple[float, float] | None = None,
 ) -> ProcessingResult:
@@ -41,9 +44,18 @@ def process_listings(
     delivered = 0
     for index, listing in enumerate(pending):
         enriched_listing = enrich(listing) if enrich else listing
-        notify(enriched_listing)
+        message_id = notify(enriched_listing)
         state.save(listing)
         delivered += 1
+        if after_delivery:
+            try:
+                after_delivery(enriched_listing, message_id)
+            except Exception as error:
+                logger.warning(
+                    "after-delivery callback failed listing={} error_type={}",
+                    listing.id,
+                    type(error).__name__,
+                )
         if delivery_jitter_seconds and index < len(pending) - 1:
             time.sleep(random.uniform(*delivery_jitter_seconds))
 

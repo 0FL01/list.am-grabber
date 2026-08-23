@@ -1,11 +1,15 @@
+import time
 from html import escape
 
 import requests
+from loguru import logger
 
 from models import RentalListing
 
 
 MAX_CAPTION_LENGTH = 1024
+MAX_MESSAGE_LENGTH = 4096
+MIN_SEND_INTERVAL_SECONDS = 1.0
 
 
 class TelegramNotifier:
@@ -14,17 +18,17 @@ class TelegramNotifier:
             raise ValueError("Telegram bot token and chat ID are required")
         self.bot_token = bot_token
         self.chat_id = chat_id
+        self._last_send_at = None
 
-    def notify(self, listing: RentalListing) -> None:
+    def notify(self, listing: RentalListing) -> int:
         text = format_listing(listing)
         image_urls = listing.image_urls[:10]
         if image_urls:
             try:
-                self._send_images(image_urls, text)
-                return
+                return self._send_images(image_urls, text)
             except RuntimeError:
                 pass
-        self._request(
+        result = self._request(
             "sendMessage",
             {
                 "chat_id": self.chat_id,
@@ -32,10 +36,30 @@ class TelegramNotifier:
                 "parse_mode": "HTML",
             },
         )
+        return _message_id(result)
 
-    def _send_images(self, image_urls: tuple[str, ...], caption: str) -> None:
+    def reply(self, message_id: int, text: str) -> int | None:
+        if type(message_id) is not int or message_id < 1:
+            raise ValueError("Telegram reply message ID must be a positive integer")
+        text = text.strip()
+        if not text:
+            return None
+        truncated = truncate_telegram_text(text)
+        if truncated != text:
+            logger.warning("Telegram analyst reply truncated reply_to={}", message_id)
+        result = self._request(
+            "sendMessage",
+            {
+                "chat_id": self.chat_id,
+                "text": truncated,
+                "reply_parameters": {"message_id": message_id},
+            },
+        )
+        return _message_id(result)
+
+    def _send_images(self, image_urls: tuple[str, ...], caption: str) -> int:
         if len(image_urls) == 1:
-            self._request(
+            result = self._request(
                 "sendPhoto",
                 {
                     "chat_id": self.chat_id,
@@ -44,16 +68,20 @@ class TelegramNotifier:
                     "parse_mode": "HTML",
                 },
             )
-            return
+            return _message_id(result)
 
         media = [{"type": "photo", "media": url} for url in image_urls]
         media[0].update({"caption": caption, "parse_mode": "HTML"})
-        self._request(
+        result = self._request(
             "sendMediaGroup",
             {"chat_id": self.chat_id, "media": media},
         )
+        if not isinstance(result, list) or not result:
+            raise RuntimeError("Telegram returned an invalid media group")
+        return _message_id(result[0])
 
-    def _request(self, method: str, payload: dict) -> None:
+    def _request(self, method: str, payload: dict):
+        self._wait_for_send_slot()
         try:
             response = requests.post(
                 f"https://api.telegram.org/bot{self.bot_token}/{method}",
@@ -67,11 +95,21 @@ class TelegramNotifier:
             raise RuntimeError(f"Telegram delivery failed{suffix}") from None
 
         try:
-            result = response.json()
+            body = response.json()
         except ValueError:
             raise RuntimeError("Telegram returned an invalid response") from None
-        if not result.get("ok"):
+        if not isinstance(body, dict) or not body.get("ok"):
             raise RuntimeError("Telegram rejected the alert")
+        return body.get("result")
+
+    def _wait_for_send_slot(self) -> None:
+        now = time.monotonic()
+        if self._last_send_at is not None:
+            delay = MIN_SEND_INTERVAL_SECONDS - (now - self._last_send_at)
+            if delay > 0:
+                time.sleep(delay)
+                now = time.monotonic()
+        self._last_send_at = now
 
 
 def format_listing(listing: RentalListing) -> str:
@@ -116,3 +154,28 @@ def _truncate(value: str, limit: int) -> str:
     if limit == 1:
         return "…"
     return f"{value[:limit - 1].rstrip()}…"
+
+
+def truncate_telegram_text(value: str, limit: int = MAX_MESSAGE_LENGTH) -> str:
+    if _utf16_length(value) <= limit:
+        return value
+    remaining = limit - _utf16_length("…")
+    characters = []
+    for character in value:
+        width = _utf16_length(character)
+        if width > remaining:
+            break
+        characters.append(character)
+        remaining -= width
+    return f"{''.join(characters).rstrip()}…"
+
+
+def _utf16_length(value: str) -> int:
+    return len(value.encode("utf-16-le")) // 2
+
+
+def _message_id(result) -> int:
+    message_id = result.get("message_id") if isinstance(result, dict) else None
+    if type(message_id) is not int or message_id < 1:
+        raise RuntimeError("Telegram returned an invalid message ID")
+    return message_id

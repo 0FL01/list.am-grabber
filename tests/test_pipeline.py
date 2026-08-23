@@ -28,15 +28,19 @@ class PipelineTest(unittest.TestCase):
             state = ListingStateStore(str(Path(directory) / "state.db"))
             delivered = []
 
-            result = process_listings([first], state, delivered.append)
+            def notify(listing):
+                delivered.append(listing)
+                return int(listing.id)
+
+            result = process_listings([first], state, notify)
             self.assertEqual(result.baselined, 1)
             self.assertEqual(delivered, [])
 
-            result = process_listings([first], state, delivered.append)
+            result = process_listings([first], state, notify)
             self.assertEqual(result.unchanged, 1)
             self.assertEqual(delivered, [])
 
-            result = process_listings([first, second], state, delivered.append)
+            result = process_listings([first, second], state, notify)
             self.assertEqual(result.delivered, 1)
             self.assertEqual([listing.id for listing in delivered], ["222"])
 
@@ -46,7 +50,7 @@ class PipelineTest(unittest.TestCase):
                 title=first.title,
                 price_text="230,000 ֏ в месяц",
             )
-            result = process_listings([cheaper_first], state, delivered.append)
+            result = process_listings([cheaper_first], state, notify)
             self.assertEqual(result.delivered, 1)
             self.assertEqual(state.get_price_key(first.id), "AMD:230000")
 
@@ -59,11 +63,20 @@ class PipelineTest(unittest.TestCase):
             def fail_delivery(_listing):
                 raise RuntimeError("Telegram unavailable")
 
+            callbacks = []
             with self.assertRaisesRegex(RuntimeError, "Telegram unavailable"):
-                process_listings([failed], state, fail_delivery)
+                process_listings(
+                    [failed],
+                    state,
+                    fail_delivery,
+                    after_delivery=lambda listing, message_id: callbacks.append(
+                        (listing, message_id)
+                    ),
+                )
             self.assertIsNone(state.get_price_key(failed.id))
+            self.assertEqual(callbacks, [])
 
-            result = process_listings([failed], state, delivered.append)
+            result = process_listings([failed], state, notify)
             self.assertEqual(result.delivered, 1)
             self.assertEqual(state.get_price_key(failed.id), "NO_PRICE")
 
@@ -71,13 +84,18 @@ class PipelineTest(unittest.TestCase):
                 str(Path(directory) / "notify-existing.db")
             )
             initial_delivery = []
+
+            def notify_initial(listing):
+                initial_delivery.append(listing)
+                return int(listing.id)
+
             with patch("parser.pipeline.random.uniform", return_value=1.5), patch(
                 "parser.pipeline.time.sleep"
             ) as sleep:
                 result = process_listings(
                     [first, second],
                     notify_existing_state,
-                    initial_delivery.append,
+                    notify_initial,
                     enrich=lambda listing: replace(
                         listing,
                         published_text="Размещено 10.12.2023",
@@ -95,6 +113,54 @@ class PipelineTest(unittest.TestCase):
                 "Размещено 10.12.2023",
             )
             sleep.assert_called_once_with(1.5)
+
+    def test_after_delivery_runs_after_save_and_failure_does_not_stop_batch(self):
+        listings = [
+            RentalListing(
+                id=str(listing_id),
+                url=f"https://www.list.am/ru/item/{listing_id}",
+                title="Дом",
+                price_text=f"{listing_id} $",
+            )
+            for listing_id in (111, 222)
+        ]
+
+        with tempfile.TemporaryDirectory() as directory:
+            state = ListingStateStore(str(Path(directory) / "state.db"))
+            state.initialize([])
+            callbacks = []
+
+            def notify(listing):
+                return int(listing.id) + 1000
+
+            def after_delivery(listing, message_id):
+                callbacks.append(
+                    (
+                        listing.id,
+                        listing.description,
+                        message_id,
+                        state.get_price_key(listing.id),
+                    )
+                )
+                if listing.id == "111":
+                    raise RuntimeError("callback failed")
+
+            result = process_listings(
+                listings,
+                state,
+                notify,
+                enrich=lambda listing: replace(listing, description="details"),
+                after_delivery=after_delivery,
+            )
+
+        self.assertEqual(result.delivered, 2)
+        self.assertEqual(
+            callbacks,
+            [
+                ("111", "details", 1111, "USD:111"),
+                ("222", "details", 1222, "USD:222"),
+            ],
+        )
 
 
 if __name__ == "__main__":

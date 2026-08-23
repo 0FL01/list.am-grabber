@@ -5,8 +5,12 @@ from threading import Event
 
 from loguru import logger
 
+from analyst import AnalysisResult, AnalystClient, AnalystError
 from db_service import ListingStateStore
-from integrations.notifications.list_am_telegram import TelegramNotifier
+from integrations.notifications.list_am_telegram import (
+    TelegramNotifier,
+    truncate_telegram_text,
+)
 from load_config import load_list_am_config
 from parser.browser import ListAmScanner
 from parser.pipeline import process_listings
@@ -20,6 +24,16 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     )
     state = ListingStateStore(str(config.database_path))
     stop_event = Event()
+    analyst = AnalystClient(config.analyst) if config.analyst.enabled else None
+    if analyst:
+        logger.info(
+            "analyst enabled model={} vision={} max_images={} max_completion_tokens={} retries={}",
+            config.analyst.model,
+            config.analyst.vision,
+            config.analyst.max_images or "all",
+            config.analyst.max_completion_tokens or "provider-default",
+            config.analyst.retries,
+        )
 
     def request_stop(_signal_number, _frame):
         stop_event.set()
@@ -29,6 +43,7 @@ def run_monitor(config_path: str, once: bool = False) -> int:
 
     while not stop_event.is_set():
         try:
+            analysis_jobs = []
             with ListAmScanner() as scanner:
                 listings = scanner.scan(config.search_urls, config.max_pages)
 
@@ -43,11 +58,15 @@ def run_monitor(config_path: str, once: bool = False) -> int:
                         )
                         return listing
 
+                def queue_analysis(listing, message_id):
+                    analysis_jobs.append((listing, message_id))
+
                 result = process_listings(
                     listings,
                     state,
                     notifier.notify,
                     enrich=add_details,
+                    after_delivery=queue_analysis if analyst else None,
                     notify_existing_on_first_run=config.notify_existing_on_first_run,
                     delivery_jitter_seconds=(1.0, 2.0),
                 )
@@ -58,6 +77,14 @@ def run_monitor(config_path: str, once: bool = False) -> int:
                 result.delivered,
                 result.unchanged,
             )
+            if analyst:
+                _run_analyses(
+                    analyst,
+                    notifier,
+                    analysis_jobs,
+                    stop_event,
+                    config.analyst.model,
+                )
         except Exception as error:
             logger.error("scan failed: {}", error)
             if once:
@@ -68,6 +95,75 @@ def run_monitor(config_path: str, once: bool = False) -> int:
         stop_event.wait(config.poll_interval_seconds)
 
     return 0
+
+
+def _run_analyses(
+    analyst: AnalystClient,
+    notifier: TelegramNotifier,
+    jobs: list[tuple],
+    stop_event: Event,
+    model: str,
+) -> None:
+    for listing, message_id in jobs:
+        if stop_event.is_set():
+            return
+        try:
+            result = analyst.analyze(listing, stop_event)
+        except AnalystError as error:
+            logger.warning(
+                "analyst failed listing={} reason={} status={} provider_code={} request_id={}",
+                listing.id,
+                error.reason,
+                error.status,
+                error.provider_code,
+                error.request_id,
+            )
+            continue
+        except Exception as error:
+            logger.warning(
+                "analyst failed listing={} reason=unexpected error_type={}",
+                listing.id,
+                type(error).__name__,
+            )
+            continue
+
+        try:
+            reply_id = notifier.reply(message_id, result.text)
+        except Exception as error:
+            logger.warning(
+                "analyst reply failed listing={} reply_to={} error_type={}",
+                listing.id,
+                message_id,
+                type(error).__name__,
+            )
+            continue
+        reply_text = truncate_telegram_text(result.text)
+        _log_analysis_success(listing.id, message_id, reply_id, model, result, reply_text)
+
+
+def _log_analysis_success(
+    listing_id: str,
+    message_id: int,
+    reply_id: int | None,
+    model: str,
+    result: AnalysisResult,
+    reply_text: str,
+) -> None:
+    logger.info(
+        "analyst delivered listing={} model={} mode={} images={} attempts={} latency_ms={} prompt_tokens={} completion_tokens={} reasoning_tokens={} visible_chars={} reply_to={} reply_id={}",
+        listing_id,
+        model,
+        result.mode,
+        result.image_count,
+        result.attempts,
+        result.latency_ms,
+        result.prompt_tokens,
+        result.completion_tokens,
+        result.reasoning_tokens,
+        len(reply_text),
+        message_id,
+        reply_id,
+    )
 
 
 def main() -> int:

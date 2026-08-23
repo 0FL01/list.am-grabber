@@ -9,6 +9,7 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 - `parser/list_am.py` — чистый разбор карточек, пагинации, detail и изображений.
 - `parser/pipeline.py`, `db_service.py` — baseline и состояние доставленных алертов.
 - `integrations/notifications/list_am_telegram.py` — Telegram text/photo/album delivery.
+- `analyst.py` — stateless OpenAI-compatible text/vision analysis новых лотов.
 - `config.example.toml` — публичный шаблон runtime-конфига.
 
 ## Rules
@@ -20,8 +21,10 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 - Media enrichment не должен блокировать текстовый alert.
 - Detail enrichment выполняется только для лотов, выбранных для отправки.
 - Detail enrichment использует отдельный свежий context: context выдачи блокируется на detail navigation.
-- Telegram album: максимум 10 первых фото, caption только у первого.
-- Между алертами одной пачки сохранять Telegram jitter не меньше 1 секунды.
+- Telegram album: максимум 10 первых фото, caption только у первого; analyst может получить полную галерею.
+- Все Telegram sends проходят gate не меньше 1 секунды; batch jitter 1–2 секунды сохраняется.
+- Analyst запускается после сохранения всех основных алертов и закрытия Playwright; не добавлять ему browser, persistent state или историю.
+- Analyst failure/reply failure не должен откатывать основной alert или прерывать следующие analysis jobs.
 - Не коммитить `config.toml`, `data/`, cookies, browser profiles или credentials.
 
 ## Deploy
