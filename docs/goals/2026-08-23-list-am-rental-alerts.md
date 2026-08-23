@@ -1,6 +1,6 @@
 # Goal: List.am rental alerts
 
-Status: active
+Status: complete
 Source: user instructions in the current session
 Last updated: 2026-08-23
 
@@ -41,8 +41,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
   - Acceptance: The local image starts the monitor with read-only search configuration, environment-provided Telegram credentials, persistent SQLite data, no auth/cookie mount, and clean SIGTERM handling.
   - Primary evidence: Docker build, `docker compose config`, one-shot smoke, and a two-cycle monitor shutdown check.
-  - Status: in_progress
-  - Evidence: Local slim-bookworm image builds; `pip check` reports no broken requirements; compose resolves to the local image with config/data mounts and no cookies; image inspection confirms config, Git metadata, environment files, cookies, and databases are absent; live one-shot parsed and baselined 105 cards.
+  - Status: verified
+  - Evidence: Local slim-bookworm image builds; `pip check` reports no broken requirements; compose resolves to the local image with config/data mounts and no cookies; image inspection confirms config, Git metadata, environment files, cookies, and databases are absent; live one-shot parsed 105 cards; a production-interval lifecycle run survived a transient blocked scan, succeeded on the next scan with 105 cards, and exited cleanly on SIGTERM.
 
 ### Constraints
 
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Remaining monitoring-lifecycle portion of R4.
-- Smallest next action: Run the built image for two production-interval scan cycles against temporary state, send SIGTERM during its wait, and confirm both scans succeed and the process exits cleanly.
-- Expected evidence: Two successful scan counter lines followed by exit status 0 after SIGTERM.
-- Stop or replan if: A normal 60-second interval still triggers a repeatable Cloudflare block in the same in-memory browser context.
+- Closes: R1-R4.
+- Smallest next action: None; run the closure check and stop.
+- Expected evidence: All required outcomes are verified with current focused and Docker evidence.
+- Stop or replan if: A closure command fails because of the final diff.
 
 ## Current State
 
-- Resolved: R1-R3 are verified; Docker build, dependency integrity, secret-safe image contents, compose wiring, and live one-shot execution are verified for R4.
-- Last relevant evidence: The final slim-bookworm image live one-shot logged `parsed=105 baselined=105 delivered=0 unchanged=0`; an artificial one-second polling test was blocked on its second scan, so the production interval remains to be checked.
+- Resolved: R1-R4 are verified.
+- Last relevant evidence: Seven focused tests and `pip check` pass; compose config is valid; the final image one-shot parsed 105 cards; the 60-second lifecycle run recovered from a transient Cloudflare block and exited cleanly after a successful 105-card scan.
 - Blocker: None.
-- Next: Verify two successful scans at the configured 60-second interval and clean SIGTERM handling.
+- Next: None.
 
 ## Material Decisions
 
@@ -101,10 +101,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R3 verified through the new scanner in a fresh Docker image; 104 live cards parsed without authentication or persisted cookies. Config validation also passes. Next checkpoint is active CLI integration.
 - 2026-08-23: R1 and R2 verified after active CLI integration. Seven focused tests pass; a fresh Docker one-shot parsed and baselined 104 cards without Telegram side effects. Next checkpoint is R4 Docker delivery.
 - 2026-08-23: R4 Docker delivery is implemented and verified except for the production-interval two-cycle lifecycle check. Build, `pip check`, compose config, secret-safe image inspection, and a 105-card live one-shot pass.
+- 2026-08-23: R4 lifecycle verified. At the production interval the monitor continued after a transient blocked scan, completed the next scan with 105 cards, and handled SIGTERM cleanly. Closure checks pass.
 
 ## Completion
 
-- Resolved outcomes:
-- Commands and artifacts:
-- Constraint and diff-scope check:
-- Final status:
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring.
+- Commands and artifacts: `python -m unittest discover -s tests` (7 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run.
+- Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, or persistent browser profile. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
+- Final status: complete
