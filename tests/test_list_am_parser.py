@@ -20,14 +20,14 @@ class CategoryParserTest(unittest.TestCase):
         self.assertEqual(page.listings[0].url, "https://www.list.am/ru/item/111")
         self.assertEqual(page.listings[0].price_key, "AMD:250000")
         self.assertEqual(page.listings[0].seller_label, "Агентство")
-        self.assertEqual(len(page.listings[0].image_urls), 10)
+        self.assertEqual(len(page.listings[0].image_urls), 11)
         self.assertEqual(
             page.listings[0].image_urls[0],
             "https://img.list.am/f/001/101001001.webp",
         )
         self.assertEqual(
             page.listings[0].image_urls[-1],
-            "https://img.list.am/f/010/101001010.webp",
+            "https://img.list.am/f/011/101001011.webp",
         )
         self.assertEqual(page.listings[1].price_key, "USD:700")
         self.assertEqual(
@@ -47,9 +47,17 @@ class CategoryParserTest(unittest.TestCase):
             details.description,
             "По остальным вопросам смело звоните.",
         )
-        self.assertEqual(len(details.image_urls), 10)
+        self.assertEqual(len(details.image_urls), 24)
         self.assertEqual(details.image_urls[0], "https://s.list.am/f/photo-01.webp")
-        self.assertEqual(details.image_urls[-1], "https://s.list.am/f/photo-10.webp")
+        self.assertEqual(details.image_urls[-1], "https://img.list.am/f/photo-24.webp")
+        self.assertEqual(
+            details.detail_attributes,
+            (
+                "Основные параметры — 70 кв.м. Общая площадь",
+                "О здании — Новостройка Нет",
+                "Парковка — Открытая",
+            ),
+        )
 
 if __name__ == "__main__":
     unittest.main()

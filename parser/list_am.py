@@ -25,6 +25,7 @@ class ListingDetails:
     updated_text: str
     description: str
     image_urls: tuple[str, ...]
+    detail_attributes: tuple[str, ...]
 
 
 def parse_listing_details(html: str) -> ListingDetails:
@@ -43,6 +44,7 @@ def parse_listing_details(html: str) -> ListingDetails:
         updated_text=_text(updated_element),
         description=_text(description_element),
         image_urls=_detail_image_urls(soup),
+        detail_attributes=_detail_attributes(soup),
     )
 
 
@@ -92,9 +94,9 @@ def _text(element) -> str:
 
 def _image_urls(value: str) -> tuple[str, ...]:
     image_ids = [image_id.strip() for image_id in value.split(",")]
-    return tuple(
+    return _unique(
         f"https://img.list.am/f/{image_id[-3:]}/{image_id}.webp"
-        for image_id in image_ids[:10]
+        for image_id in image_ids
         if image_id.isdigit()
     )
 
@@ -122,18 +124,52 @@ def _detail_image_urls(soup: BeautifulSoup) -> tuple[str, ...]:
         if not isinstance(image_urls, list):
             continue
 
-        return tuple(
-            _absolute_image_url(image_url)
-            for image_url in image_urls[:10]
+        return _unique(
+            absolute_url
+            for image_url in image_urls
             if isinstance(image_url, str) and image_url
+            if (absolute_url := _absolute_image_url(image_url))
         )
     return ()
 
 
-def _absolute_image_url(image_url: str) -> str:
+def _absolute_image_url(image_url: str) -> str | None:
     if image_url.startswith("//"):
-        return f"https:{image_url}"
-    return urljoin("https://www.list.am", image_url)
+        image_url = f"https:{image_url}"
+    else:
+        image_url = urljoin("https://www.list.am", image_url)
+
+    try:
+        parts = urlsplit(image_url)
+        port = parts.port
+    except ValueError:
+        return None
+    if (
+        parts.scheme != "https"
+        or parts.hostname not in {"img.list.am", "s.list.am"}
+        or parts.username is not None
+        or parts.password is not None
+        or port not in (None, 443)
+    ):
+        return None
+    return image_url
+
+
+def _detail_attributes(soup: BeautifulSoup) -> tuple[str, ...]:
+    attributes = []
+    for element in soup.select("#pcontent .at2:not(.disabled)"):
+        value = _text(element)
+        if not value:
+            continue
+        group = element.find_parent(class_="attr")
+        heading = group.find_previous_sibling(class_="gt") if group else None
+        context = _text(heading)
+        attributes.append(f"{context} — {value}" if context else value)
+    return tuple(attributes)
+
+
+def _unique(values) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(values))
 
 
 def _find_next_url(soup: BeautifulSoup, current_url: str) -> str | None:

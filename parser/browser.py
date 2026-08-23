@@ -92,6 +92,7 @@ class ListAmScanner:
                 updated_text=details.updated_text,
                 description=details.description,
                 image_urls=details.image_urls or listing.image_urls,
+                detail_attributes=details.detail_attributes,
             )
         finally:
             detail_context.close()

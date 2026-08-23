@@ -15,6 +15,7 @@ class RentalListing:
     published_text: str = ""
     updated_text: str = ""
     description: str = ""
+    detail_attributes: tuple[str, ...] = ()
 
     @property
     def price_key(self) -> str:

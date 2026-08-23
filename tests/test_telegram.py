@@ -20,6 +20,7 @@ class TelegramNotifierTest(unittest.TestCase):
             published_text="Размещено 10.12.2023",
             updated_text="Обновлено 23.08.2026, 01:29",
             description="Очень подробное описание <&> " * 100,
+            detail_attributes=("Парковка — Открытая",),
             image_urls=tuple(
                 f"https://img.list.am/f/{index:03d}/101001{index:03d}.webp"
                 for index in range(1, 12)
@@ -51,6 +52,7 @@ class TelegramNotifierTest(unittest.TestCase):
             payload["media"][0]["caption"], "html.parser"
         ).get_text()
         self.assertLessEqual(len(caption_text), 1024)
+        self.assertNotIn("Парковка", payload["media"][0]["caption"])
         self.assertNotIn("caption", payload["media"][1])
         response.raise_for_status.assert_called_once_with()
 
