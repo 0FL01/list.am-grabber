@@ -31,23 +31,10 @@ def run_monitor(config_path: str, once: bool = False) -> int:
         while not stop_event.is_set():
             try:
                 listings = scanner.scan(config.search_urls, config.max_pages)
-
-                def add_phone(listing):
-                    try:
-                        return scanner.add_phone(listing)
-                    except Exception as error:
-                        logger.warning(
-                            "phone extraction failed for listing {}: {}",
-                            listing.id,
-                            error,
-                        )
-                        return listing
-
                 result = process_listings(
                     listings,
                     state,
                     notifier.notify,
-                    prepare=add_phone,
                     notify_existing_on_first_run=config.notify_existing_on_first_run,
                     delivery_jitter_seconds=(1.0, 2.0),
                 )

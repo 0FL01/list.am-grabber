@@ -18,7 +18,6 @@ def process_listings(
     listings: list[RentalListing],
     state: ListingStateStore,
     notify: Callable[[RentalListing], None],
-    prepare: Callable[[RentalListing], RentalListing] | None = None,
     notify_existing_on_first_run: bool = False,
     delivery_jitter_seconds: tuple[float, float] | None = None,
 ) -> ProcessingResult:
@@ -40,8 +39,7 @@ def process_listings(
 
     delivered = 0
     for index, listing in enumerate(pending):
-        prepared_listing = prepare(listing) if prepare else listing
-        notify(prepared_listing)
+        notify(listing)
         state.save(listing)
         delivered += 1
         if delivery_jitter_seconds and index < len(pending) - 1:

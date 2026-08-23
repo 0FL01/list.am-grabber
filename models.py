@@ -11,7 +11,6 @@ class RentalListing:
     price_text: str = ""
     summary: str = ""
     seller_label: str = ""
-    phone: str = ""
     image_urls: tuple[str, ...] = ()
 
     @property

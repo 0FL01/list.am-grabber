@@ -16,7 +16,6 @@ class TelegramNotifierTest(unittest.TestCase):
             price_text="250,000 ֏ в месяц",
             summary="2 комнаты & кабинет",
             seller_label="Собственник",
-            phone="+37493939319",
             image_urls=tuple(
                 f"https://img.list.am/f/{index:03d}/101001{index:03d}.webp"
                 for index in range(1, 12)
@@ -39,10 +38,6 @@ class TelegramNotifierTest(unittest.TestCase):
         self.assertIn("https://www.list.am/ru/item/111", payload["media"][0]["caption"])
         self.assertIn("Квартира &lt;центр&gt;", payload["media"][0]["caption"])
         self.assertIn("2 комнаты &amp; кабинет", payload["media"][0]["caption"])
-        self.assertIn(
-            "Телефон: <code>+37493939319</code>",
-            payload["media"][0]["caption"],
-        )
         self.assertNotIn("caption", payload["media"][1])
         response.raise_for_status.assert_called_once_with()
 

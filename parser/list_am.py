@@ -18,17 +18,6 @@ class CategoryPage:
     next_url: str | None
 
 
-def normalize_phone(value: str) -> str:
-    digits = "".join(character for character in value if character.isdigit())
-    if len(digits) == 11 and digits.startswith("374"):
-        return f"+{digits}"
-    if len(digits) == 9 and digits.startswith("0"):
-        return f"+374{digits[1:]}"
-    if len(digits) == 8:
-        return f"+374{digits}"
-    return ""
-
-
 def parse_category_page(html: str, current_url: str) -> CategoryPage:
     soup = BeautifulSoup(html, "html.parser")
     listings = []

@@ -55,8 +55,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User: "номер телефона извлекать" in format `+37493939319` and make it copyable with one backtick pair.
   - Acceptance: Before sending a new or price-changed listing, runtime reveals its first available phone without login, normalizes Armenian local numbers to `+374...`, and renders it as a Telegram inline-code value; missing phone does not suppress the alert.
   - Primary evidence: Phone normalization and Telegram formatting tests plus one live headless phone-reveal smoke.
-  - Status: verified
-  - Evidence: Eight focused tests pass; a fresh Docker headless context, retried once after the normal Cloudflare interval, revealed listing `24138361` as `+37455502560` without login or prepared cookies.
+  - Status: superseded
+  - Evidence: Superseded by the user's 2026-08-23 instruction to remove phone acquisition under KISS after remote `/rtam` began requiring List.am authorization.
 
 - R7: Include listing photos without producing separate-message clutter.
   - Source: User: "поддержку скриншотов из лота", respect Telegram limits, trim last images, and "не плодить хаос из сообщений".
@@ -77,6 +77,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 ### Non-goals
 
 - Full detail-page parsing or sending more than Telegram's first 10 album images.
+- Phone extraction or List.am authentication.
 - XLSX export, VK notifications, GUI support, or Avito compatibility in the active runtime.
 - Currency conversion, proxy rotation, CAPTCHA services, account login, or a generic crawler framework.
 - Physical cleanup or cosmetic renaming of every dormant upstream file.
@@ -98,8 +99,8 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current State
 
-- Resolved: R1-R7 are verified.
-- Last relevant evidence: Ten tests pass; a generated full-size List.am photo URL returned HTTP 200; the final Docker image builds.
+- Resolved: R1-R5 and R7 are verified; R6 is superseded by the no-phone KISS decision.
+- Last relevant evidence: Nine tests pass; active runtime no longer opens detail pages or calls the authorization-gated phone endpoint.
 - Blocker: None.
 - Next: None.
 
@@ -118,6 +119,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Keep baseline as the safe default, but allow an explicit first-run mode that sends all current listings and persists each only after successful delivery.
 - 2026-08-23: After one blocked phone reveal, skip phone enrichment for the rest of that scan so bulk delivery continues without repeated 15-second challenge waits.
 - 2026-08-23: Space multi-alert batches with a random 1-2 second delay between successful Telegram deliveries; do not delay a single alert or sleep after the last item.
+- 2026-08-23: Remove phone acquisition entirely after the user chose KISS over introducing List.am authorization; alerts retain the direct listing link.
 
 ## Checkpoint History
 
@@ -135,10 +137,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R7 verified. Ten tests cover extraction and grouped delivery; a generated live full-size image URL returned HTTP 200 and the final image builds.
 - 2026-08-23: Remote production diagnosis isolated Cloudflare blocking to `chromium-headless-shell`; full headless Chromium passed twice with 105 cards, so Docker packaging and launch now pin the full browser executable.
 - 2026-08-23: The tracked config example now demonstrates two independent regional search URLs and documents per-URL `max_pages` behavior.
+- 2026-08-23: R6 superseded by explicit user instruction. Phone code and detail-page navigation were removed after remote verification showed `/rtam` requires authorization.
 
 ## Completion
 
-- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 normalized copyable Armenian phone numbers; R7 grouped listing photos within Telegram limits.
-- Commands and artifacts: `python -m unittest discover -s tests` (10 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live phone reveal `+37455502560`; live generated List.am image HTTP 200.
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 superseded; R7 grouped listing photos within Telegram limits.
+- Commands and artifacts: `python -m unittest discover -s tests` (9 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live generated List.am image HTTP 200.
 - Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
 - Final status: complete
