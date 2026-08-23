@@ -49,6 +49,7 @@ def run_monitor(config_path: str, once: bool = False) -> int:
                     notifier.notify,
                     prepare=add_phone,
                     notify_existing_on_first_run=config.notify_existing_on_first_run,
+                    delivery_jitter_seconds=(1.0, 2.0),
                 )
                 logger.info(
                     "scan parsed={} baselined={} delivered={} unchanged={}",

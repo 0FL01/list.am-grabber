@@ -117,6 +117,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Send at most the first 10 List.am photos as one Telegram album with one caption; use one photo message for a single image and one text fallback if media delivery fails.
 - 2026-08-23: Keep baseline as the safe default, but allow an explicit first-run mode that sends all current listings and persists each only after successful delivery.
 - 2026-08-23: After one blocked phone reveal, skip phone enrichment for the rest of that scan so bulk delivery continues without repeated 15-second challenge waits.
+- 2026-08-23: Space multi-alert batches with a random 1-2 second delay between successful Telegram deliveries; do not delay a single alert or sleep after the last item.
 
 ## Checkpoint History
 

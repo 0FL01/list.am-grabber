@@ -1,3 +1,5 @@
+import random
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -18,6 +20,7 @@ def process_listings(
     notify: Callable[[RentalListing], None],
     prepare: Callable[[RentalListing], RentalListing] | None = None,
     notify_existing_on_first_run: bool = False,
+    delivery_jitter_seconds: tuple[float, float] | None = None,
 ) -> ProcessingResult:
     unique_listings = list({listing.id: listing for listing in listings}.values())
 
@@ -27,16 +30,21 @@ def process_listings(
             return ProcessingResult(baselined=len(unique_listings))
         state.initialize([])
 
-    delivered = 0
+    pending = []
     unchanged = 0
     for listing in unique_listings:
         if state.get_price_key(listing.id) == listing.price_key:
             unchanged += 1
-            continue
+        else:
+            pending.append(listing)
 
+    delivered = 0
+    for index, listing in enumerate(pending):
         prepared_listing = prepare(listing) if prepare else listing
         notify(prepared_listing)
         state.save(listing)
         delivered += 1
+        if delivery_jitter_seconds and index < len(pending) - 1:
+            time.sleep(random.uniform(*delivery_jitter_seconds))
 
     return ProcessingResult(delivered=delivered, unchanged=unchanged)

@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 from db_service import ListingStateStore
 from models import RentalListing
@@ -84,17 +85,22 @@ class PipelineTest(unittest.TestCase):
                 str(Path(directory) / "notify-existing.db")
             )
             initial_delivery = []
-            result = process_listings(
-                [first, second],
-                notify_existing_state,
-                initial_delivery.append,
-                notify_existing_on_first_run=True,
-            )
+            with patch("parser.pipeline.random.uniform", return_value=1.5), patch(
+                "parser.pipeline.time.sleep"
+            ) as sleep:
+                result = process_listings(
+                    [first, second],
+                    notify_existing_state,
+                    initial_delivery.append,
+                    notify_existing_on_first_run=True,
+                    delivery_jitter_seconds=(1.0, 2.0),
+                )
             self.assertEqual(result.delivered, 2)
             self.assertEqual(
                 [listing.id for listing in initial_delivery],
                 ["111", "222"],
             )
+            sleep.assert_called_once_with(1.5)
 
 
 if __name__ == "__main__":

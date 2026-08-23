@@ -18,6 +18,7 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 - Первый полный scan создаёт baseline. Состояние обновляется только после успешного Telegram alert.
 - Телефон и media enrichment не должны блокировать текстовый alert.
 - Telegram album: максимум 10 первых фото, caption только у первого.
+- Между алертами одной пачки сохранять Telegram jitter не меньше 1 секунды.
 - Не коммитить `config.toml`, `data/`, cookies, browser profiles или credentials.
 
 ## Verify
