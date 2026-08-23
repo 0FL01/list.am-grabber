@@ -20,14 +20,14 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Source: User: "парсер объявлений для list.am" with scope "снять жильё в аренду для житья и удаленной работы".
   - Acceptance: A configured search is polled and its listing cards are parsed into stable IDs, canonical links, titles, prices, and summaries.
   - Primary evidence: Deterministic parser fixture test plus a live one-shot scan counter showing at least one parsed listing.
-  - Status: in_progress
-  - Evidence: The focused parser/config tests pass; the new `ListAmScanner` parsed 104 unique cards from the configured live search in a fresh Docker image.
+  - Status: verified
+  - Evidence: The focused parser/config tests pass; the active CLI one-shot parsed and baselined 104 unique cards from the configured live search in a fresh Docker image.
 
 - R2: Send Telegram-only alerts without repeatedly alerting an unchanged listing.
   - Source: User: "VK не нужен, только телеграмм бот для объявлений" and instruction to proceed with the audited minimal plan.
   - Acceptance: After initial baseline, a new listing or changed displayed price sends one text alert with a List.am link; unchanged listings do not resend; failed delivery is retried because it is not persisted as handled.
   - Primary evidence: Pipeline test with a temporary SQLite database and fake notifier covering baseline, unchanged, new, changed-price, and failed-delivery cases.
-  - Status: in_progress
+  - Status: verified
   - Evidence: Focused pipeline and Telegram tests pass for initial baseline, unchanged suppression, new listing, changed price, failed delivery remaining retryable, escaped text payloads, and sanitized transport failures.
 
 - R3: Run through a headless browser in Docker without List.am login or prepared cookies.
@@ -69,17 +69,17 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: Runtime integration portions of R1 and R2.
-- Smallest next action: Replace the active CLI with a thin monitor loop that loads List.am config, keeps one scanner context across cycles, runs the verified delivery pipeline, reads Telegram credentials from environment variables, supports `--once`, and exits non-zero on one-shot failure.
-- Expected evidence: Existing focused tests remain green and a one-shot CLI run against an empty temporary database completes a live baseline without contacting Telegram.
-- Stop or replan if: Integration requires reintroducing Avito factories, batch notification semantics, or persistent browser credentials.
+- Closes: R4.
+- Smallest next action: Replace the upstream Docker delivery path with a minimal local List.am image and compose service using environment Telegram credentials, read-only config, persistent data, no cookie mounts, a secret-safe build context, and an `exec` entrypoint.
+- Expected evidence: Docker build and `docker compose config` succeed, active dependencies pass `pip check`, and the image contains no local config, Git metadata, cookies, database, or environment file.
+- Stop or replan if: The container requires an auth/profile mount, upstream Avito image, full checkout bind mount, or a second service.
 
 ## Current State
 
-- Resolved: Scope is frozen; the configured stealth-enabled scanner, parser, delivery state, and text-only Telegram transport work independently; R3 is verified in Docker.
-- Last relevant evidence: Fresh Docker scanner run parsed 104 live cards through the new runtime module.
+- Resolved: R1-R3 are verified; the active CLI integrates the scanner, baseline/delivery state, and Telegram notifier in one persistent browser context.
+- Last relevant evidence: All 7 focused tests pass and the active CLI Docker one-shot logged `parsed=104 baselined=104 delivered=0 unchanged=0`.
 - Blocker: None.
-- Next: Integrate the modules in the active CLI monitor and verify a live baseline run.
+- Next: Make the Docker/compose delivery path minimal, local, persistent, and secret-safe.
 
 ## Material Decisions
 
@@ -98,6 +98,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R2 state checkpoint passed. A single SQLite table baselines the first scan, suppresses unchanged listings, alerts price changes, and records state only after notifier success. Next checkpoint is Telegram transport.
 - 2026-08-23: R2 Telegram checkpoint passed. Alerts are text-only, escaped, linked to List.am, and transport failures do not expose the bot token. Next checkpoint is the configured browser scanner.
 - 2026-08-23: R3 verified through the new scanner in a fresh Docker image; 104 live cards parsed without authentication or persisted cookies. Config validation also passes. Next checkpoint is active CLI integration.
+- 2026-08-23: R1 and R2 verified after active CLI integration. Seven focused tests pass; a fresh Docker one-shot parsed and baselined 104 cards without Telegram side effects. Next checkpoint is R4 Docker delivery.
 
 ## Completion
 
