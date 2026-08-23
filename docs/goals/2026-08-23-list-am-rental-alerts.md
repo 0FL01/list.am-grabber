@@ -120,6 +120,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: After one blocked phone reveal, skip phone enrichment for the rest of that scan so bulk delivery continues without repeated 15-second challenge waits.
 - 2026-08-23: Space multi-alert batches with a random 1-2 second delay between successful Telegram deliveries; do not delay a single alert or sleep after the last item.
 - 2026-08-23: Remove phone acquisition entirely after the user chose KISS over introducing List.am authorization; alerts retain the direct listing link.
+- 2026-08-23: Create and close a fresh Playwright browser/context for each poll. Remote evidence showed the first scan succeeds, the reused context becomes persistently blocked, and a fresh context immediately restores all 96 cards.
 
 ## Checkpoint History
 

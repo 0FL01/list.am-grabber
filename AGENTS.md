@@ -15,6 +15,7 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 
 - Активный runtime не должен импортировать старые Avito/VK/GUI/export paths.
 - Фильтры поиска задаются URL List.am; `max_pages` применяется к каждому URL.
+- Создавать новый Playwright context на каждый scan: Cloudflare блокирует повторные проходы в старом context.
 - Первый полный scan создаёт baseline. Состояние обновляется только после успешного Telegram alert.
 - Media enrichment не должен блокировать текстовый alert.
 - Telegram album: максимум 10 первых фото, caption только у первого.

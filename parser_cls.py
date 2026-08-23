@@ -27,32 +27,33 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     signal.signal(signal.SIGTERM, request_stop)
     signal.signal(signal.SIGINT, request_stop)
 
-    with ListAmScanner() as scanner:
-        while not stop_event.is_set():
-            try:
+    while not stop_event.is_set():
+        try:
+            with ListAmScanner() as scanner:
                 listings = scanner.scan(config.search_urls, config.max_pages)
-                result = process_listings(
-                    listings,
-                    state,
-                    notifier.notify,
-                    notify_existing_on_first_run=config.notify_existing_on_first_run,
-                    delivery_jitter_seconds=(1.0, 2.0),
-                )
-                logger.info(
-                    "scan parsed={} baselined={} delivered={} unchanged={}",
-                    len(listings),
-                    result.baselined,
-                    result.delivered,
-                    result.unchanged,
-                )
-            except Exception as error:
-                logger.error("scan failed: {}", error)
-                if once:
-                    return 1
 
+            result = process_listings(
+                listings,
+                state,
+                notifier.notify,
+                notify_existing_on_first_run=config.notify_existing_on_first_run,
+                delivery_jitter_seconds=(1.0, 2.0),
+            )
+            logger.info(
+                "scan parsed={} baselined={} delivered={} unchanged={}",
+                len(listings),
+                result.baselined,
+                result.delivered,
+                result.unchanged,
+            )
+        except Exception as error:
+            logger.error("scan failed: {}", error)
             if once:
-                return 0
-            stop_event.wait(config.poll_interval_seconds)
+                return 1
+
+        if once:
+            return 0
+        stop_event.wait(config.poll_interval_seconds)
 
     return 0
 
