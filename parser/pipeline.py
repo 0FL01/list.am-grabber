@@ -17,12 +17,15 @@ def process_listings(
     state: ListingStateStore,
     notify: Callable[[RentalListing], None],
     prepare: Callable[[RentalListing], RentalListing] | None = None,
+    notify_existing_on_first_run: bool = False,
 ) -> ProcessingResult:
     unique_listings = list({listing.id: listing for listing in listings}.values())
 
     if not state.is_initialized():
-        state.initialize(unique_listings)
-        return ProcessingResult(baselined=len(unique_listings))
+        if not notify_existing_on_first_run:
+            state.initialize(unique_listings)
+            return ProcessingResult(baselined=len(unique_listings))
+        state.initialize([])
 
     delivered = 0
     unchanged = 0

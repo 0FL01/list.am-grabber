@@ -80,6 +80,22 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(result.delivered, 1)
             self.assertEqual(state.get_price_key(failed.id), "NO_PRICE")
 
+            notify_existing_state = ListingStateStore(
+                str(Path(directory) / "notify-existing.db")
+            )
+            initial_delivery = []
+            result = process_listings(
+                [first, second],
+                notify_existing_state,
+                initial_delivery.append,
+                notify_existing_on_first_run=True,
+            )
+            self.assertEqual(result.delivered, 2)
+            self.assertEqual(
+                [listing.id for listing in initial_delivery],
+                ["111", "222"],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

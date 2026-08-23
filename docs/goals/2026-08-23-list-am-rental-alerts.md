@@ -25,7 +25,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 - R2: Send Telegram-only alerts without repeatedly alerting an unchanged listing.
   - Source: User: "VK не нужен, только телеграмм бот для объявлений" and instruction to proceed with the audited minimal plan.
-  - Acceptance: After initial baseline, a new listing or changed displayed price sends one text alert with a List.am link; unchanged listings do not resend; failed delivery is retried because it is not persisted as handled.
+  - Acceptance: The default first scan creates a baseline, while explicit `notify_existing_on_first_run` sends current listings; afterward a new listing or changed displayed price sends one alert; unchanged listings do not resend; failed delivery is retried because it is not persisted as handled.
   - Primary evidence: Pipeline test with a temporary SQLite database and fake notifier covering baseline, unchanged, new, changed-price, and failed-delivery cases.
   - Status: verified
   - Evidence: Focused pipeline and Telegram tests pass for initial baseline, unchanged suppression, new listing, changed price, failed delivery remaining retryable, escaped text payloads, and sanitized transport failures.
@@ -115,6 +115,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Store Telegram credentials in ignored `config.toml`; track only `config.example.toml` and remove Telegram environment wiring from Compose.
 - 2026-08-23: Reveal a phone only for listings selected for delivery, normalize the first Armenian number to `+374...`, and render it with Telegram inline-code semantics; phone failure remains non-fatal.
 - 2026-08-23: Send at most the first 10 List.am photos as one Telegram album with one caption; use one photo message for a single image and one text fallback if media delivery fails.
+- 2026-08-23: Keep baseline as the safe default, but allow an explicit first-run mode that sends all current listings and persists each only after successful delivery.
 
 ## Checkpoint History
 

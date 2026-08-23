@@ -20,6 +20,7 @@ search_urls = ["https://www.list.am/ru/category/56?price1=100000"]
 max_pages = 2
 poll_interval_seconds = 30
 database_path = "data/test.db"
+notify_existing_on_first_run = true
 """.strip(),
                 encoding="utf-8",
             )
@@ -31,6 +32,7 @@ database_path = "data/test.db"
         self.assertEqual(config.database_path, Path("data/test.db"))
         self.assertEqual(config.telegram_bot_token, "token")
         self.assertEqual(config.telegram_chat_id, "123")
+        self.assertTrue(config.notify_existing_on_first_run)
 
     def test_rejects_non_list_am_url(self):
         with tempfile.TemporaryDirectory() as directory:

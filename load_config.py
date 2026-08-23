@@ -14,6 +14,9 @@ def load_list_am_config(path: str = "config.toml") -> ListAmConfig:
         search_urls=section.get("search_urls", []),
         telegram_bot_token=telegram.get("bot_token", ""),
         telegram_chat_id=str(telegram.get("chat_id", "")),
+        notify_existing_on_first_run=section.get(
+            "notify_existing_on_first_run", False
+        ),
         max_pages=section.get("max_pages", 1),
         poll_interval_seconds=section.get("poll_interval_seconds", 60),
         database_path=Path(section.get("database_path", "data/listings.db")),
