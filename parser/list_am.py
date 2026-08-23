@@ -59,6 +59,7 @@ def parse_category_page(html: str, current_url: str) -> CategoryPage:
                 price_text=_text(card.select_one(".p")),
                 summary=_text(card.select_one(".at")),
                 seller_label=_text(card.select_one(".po69 .ge4")),
+                image_urls=_image_urls(card.get("data-tslider", "")),
             )
         )
 
@@ -70,6 +71,15 @@ def parse_category_page(html: str, current_url: str) -> CategoryPage:
 
 def _text(element) -> str:
     return element.get_text(" ", strip=True) if element else ""
+
+
+def _image_urls(value: str) -> tuple[str, ...]:
+    image_ids = [image_id.strip() for image_id in value.split(",")]
+    return tuple(
+        f"https://img.list.am/f/{image_id[-3:]}/{image_id}.webp"
+        for image_id in image_ids[:10]
+        if image_id.isdigit()
+    )
 
 
 def _find_next_url(soup: BeautifulSoup, current_url: str) -> str | None:

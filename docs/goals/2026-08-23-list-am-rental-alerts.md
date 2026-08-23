@@ -58,6 +58,13 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Status: verified
   - Evidence: Eight focused tests pass; a fresh Docker headless context, retried once after the normal Cloudflare interval, revealed listing `24138361` as `+37455502560` without login or prepared cookies.
 
+- R7: Include listing photos without producing separate-message clutter.
+  - Source: User: "поддержку скриншотов из лота", respect Telegram limits, trim last images, and "не плодить хаос из сообщений".
+  - Acceptance: Alerts use up to the first 10 listing photos in one Telegram album with the alert caption only on the first item; one photo uses one photo message; media failure falls back to one text alert.
+  - Primary evidence: Category image extraction fixture and mocked Telegram payload tests against the documented Bot API limits.
+  - Status: verified
+  - Evidence: Ten focused tests pass for first-10 extraction, one-caption album payload, single-photo delivery, and text fallback; generated live URL `https://img.list.am/f/897/100886897.webp` returned HTTP 200 as a 720×960 image; the final Docker image builds.
+
 ### Constraints
 
 - C1: Use a headless browser in Docker; do not require List.am authorization or prepared cookies.
@@ -69,7 +76,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ### Non-goals
 
-- Full detail-page parsing or full image galleries.
+- Full detail-page parsing or sending more than Telegram's first 10 album images.
 - XLSX export, VK notifications, GUI support, or Avito compatibility in the active runtime.
 - Currency conversion, proxy rotation, CAPTCHA services, account login, or a generic crawler framework.
 - Physical cleanup or cosmetic renaming of every dormant upstream file.
@@ -84,15 +91,15 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 
 ## Current Checkpoint
 
-- Closes: R1-R6.
+- Closes: R1-R7.
 - Smallest next action: None; closure evidence is current.
 - Expected evidence: All required outcomes are verified.
 - Stop or replan if: A final diff check fails.
 
 ## Current State
 
-- Resolved: R1-R6 are verified.
-- Last relevant evidence: Eight tests pass and Docker headless phone reveal returned `+37455502560` without authorization or prepared browser state.
+- Resolved: R1-R7 are verified.
+- Last relevant evidence: Ten tests pass; a generated full-size List.am photo URL returned HTTP 200; the final Docker image builds.
 - Blocker: None.
 - Next: None.
 
@@ -107,6 +114,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed headless-shell dependencies; the matching official Playwright image was disproportionately large for this personal monitor and its pull exceeded the bounded build attempt.
 - 2026-08-23: Store Telegram credentials in ignored `config.toml`; track only `config.example.toml` and remove Telegram environment wiring from Compose.
 - 2026-08-23: Reveal a phone only for listings selected for delivery, normalize the first Armenian number to `+374...`, and render it with Telegram inline-code semantics; phone failure remains non-fatal.
+- 2026-08-23: Send at most the first 10 List.am photos as one Telegram album with one caption; use one photo message for a single image and one text fallback if media delivery fails.
 
 ## Checkpoint History
 
@@ -121,10 +129,11 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R4 lifecycle verified. At the production interval the monitor continued after a transient blocked scan, completed the next scan with 105 cards, and handled SIGTERM cleanly. Closure checks pass.
 - 2026-08-23: R5 verified. Telegram credentials moved from environment variables to ignored `config.toml`; the tracked example contains empty values.
 - 2026-08-23: R6 verified. Phone normalization/inline-code tests pass; Docker headless reveal produced `+37455502560` without List.am authorization.
+- 2026-08-23: R7 verified. Ten tests cover extraction and grouped delivery; a generated live full-size image URL returned HTTP 200 and the final image builds.
 
 ## Completion
 
-- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 normalized copyable Armenian phone numbers in alerts.
-- Commands and artifacts: `python -m unittest discover -s tests` (8 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live phone reveal `+37455502560`.
+- Resolved outcomes: R1 configured List.am scanning; R2 Telegram-only deduplicated delivery; R3 headless Docker operation without List.am auth or prepared cookies; R4 repeatable local container monitoring; R5 ignored TOML-based Telegram credentials with a tracked example; R6 normalized copyable Armenian phone numbers; R7 grouped listing photos within Telegram limits.
+- Commands and artifacts: `python -m unittest discover -s tests` (10 passing); `docker build -t list-am-search:local .`; image `pip check`; `docker compose config`; Git ignore checks; secret-safe image assertions; live `--once` scan with 105 parsed cards; production-interval lifecycle/SIGTERM run; live phone reveal `+37455502560`; live generated List.am image HTTP 200.
 - Constraint and diff-scope check: Active runtime contains no VK, XLSX, detail/phone scraping, login, proxy, CAPTCHA service, persistent browser profile, or Telegram environment wiring. Telegram credentials and generated state are not committed. Dormant upstream files were not cosmetically cleaned up.
 - Final status: complete

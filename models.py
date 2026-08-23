@@ -12,6 +12,7 @@ class RentalListing:
     summary: str = ""
     seller_label: str = ""
     phone: str = ""
+    image_urls: tuple[str, ...] = ()
 
     @property
     def price_key(self) -> str:
