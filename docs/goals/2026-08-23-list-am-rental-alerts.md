@@ -130,6 +130,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R5 verified. Telegram credentials moved from environment variables to ignored `config.toml`; the tracked example contains empty values.
 - 2026-08-23: R6 verified. Phone normalization/inline-code tests pass; Docker headless reveal produced `+37455502560` without List.am authorization.
 - 2026-08-23: R7 verified. Ten tests cover extraction and grouped delivery; a generated live full-size image URL returned HTTP 200 and the final image builds.
+- 2026-08-23: The tracked config example now demonstrates two independent regional search URLs and documents per-URL `max_pages` behavior.
 
 ## Completion
 

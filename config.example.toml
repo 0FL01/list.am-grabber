@@ -3,9 +3,12 @@ bot_token = ""
 chat_id = ""
 
 [list_am]
+# Можно указать несколько готовых URL, например отдельный регион в каждой строке.
 search_urls = [
-    "https://www.list.am/ru/category/56",
+    "https://www.list.am/ru/category/56?n=43&srt=3",
+    "https://www.list.am/ru/category/56?n=58&srt=3",
 ]
+# Лимит применяется отдельно к каждому URL.
 max_pages = 1
 poll_interval_seconds = 60
 database_path = "data/listings.db"
