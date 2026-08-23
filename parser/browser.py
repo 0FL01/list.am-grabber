@@ -24,6 +24,7 @@ class ListAmScanner:
         playwright = self._playwright_context.__enter__()
         self.browser = playwright.chromium.launch(
             headless=self.headless,
+            executable_path=playwright.chromium.executable_path,
             args=["--disable-blink-features=AutomationControlled"],
         )
         self.context = self.browser.new_context(locale="ru-RU")

@@ -35,7 +35,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
   - Acceptance: A fresh container with no List.am cookie/profile mount opens a configured category search and parses its cards using headless Chromium.
   - Primary evidence: Production-like Docker smoke command and observed parsed-listing counter; a Cloudflare challenge is a failure, not an empty successful scan.
   - Status: verified
-  - Evidence: `docker build -t list-am-search:dev .` followed by a fresh-container `ListAmScanner` one-shot parsed 104 unique cards using headless Chromium with stealth and no login, cookie file, or browser-profile mount.
+  - Evidence: Fresh-container and remote-host probes parsed 104-105 cards using full headless Chromium with stealth and no login, cookie file, or browser-profile mount. The lighter `chromium-headless-shell` was rejected by Cloudflare on the remote host and is not used.
 
 - R4: Provide a repeatable monitoring container configuration.
   - Source: User instruction to build the solution from start to finish under the Docker constraint.
@@ -111,7 +111,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: Keep one state row per listing with its last handled displayed-price key; persist a new key only after successful Telegram delivery.
 - 2026-08-23: Adapt only the active runtime. Dormant upstream GUI/Avito files are not a cleanup objective.
 - 2026-08-23: Vanilla headless Chromium is blocked in the current Docker environment; use the existing `playwright-stealth` integration without adding broader bypass infrastructure.
-- 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed headless-shell dependencies; the matching official Playwright image was disproportionately large for this personal monitor and its pull exceeded the bounded build attempt.
+- 2026-08-23: Use `python:3.11-slim-bookworm` with Playwright-managed full Chromium. `chromium-headless-shell` was reproducibly blocked on the deployment host while full Chromium returned HTTP 200 with 105 cards under otherwise identical settings.
 - 2026-08-23: Store Telegram credentials in ignored `config.toml`; track only `config.example.toml` and remove Telegram environment wiring from Compose.
 - 2026-08-23: Reveal a phone only for listings selected for delivery, normalize the first Armenian number to `+374...`, and render it with Telegram inline-code semantics; phone failure remains non-fatal.
 - 2026-08-23: Send at most the first 10 List.am photos as one Telegram album with one caption; use one photo message for a single image and one text fallback if media delivery fails.
@@ -130,6 +130,7 @@ Complete the frozen Required Outcomes using the listed Change Envelope and Prima
 - 2026-08-23: R5 verified. Telegram credentials moved from environment variables to ignored `config.toml`; the tracked example contains empty values.
 - 2026-08-23: R6 verified. Phone normalization/inline-code tests pass; Docker headless reveal produced `+37455502560` without List.am authorization.
 - 2026-08-23: R7 verified. Ten tests cover extraction and grouped delivery; a generated live full-size image URL returned HTTP 200 and the final image builds.
+- 2026-08-23: Remote production diagnosis isolated Cloudflare blocking to `chromium-headless-shell`; full headless Chromium passed twice with 105 cards, so Docker packaging and launch now pin the full browser executable.
 - 2026-08-23: The tracked config example now demonstrates two independent regional search URLs and documents per-URL `max_pages` behavior.
 
 ## Completion
