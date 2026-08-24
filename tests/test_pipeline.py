@@ -137,6 +137,8 @@ class PipelineTest(unittest.TestCase):
                 callbacks.append(
                     (
                         listing.id,
+                        listing.title,
+                        listing.price_text,
                         listing.description,
                         message_id,
                         state.get_price_key(listing.id),
@@ -149,7 +151,12 @@ class PipelineTest(unittest.TestCase):
                 listings,
                 state,
                 notify,
-                enrich=lambda listing: replace(listing, description="details"),
+                enrich=lambda listing: replace(
+                    listing,
+                    title="Русский заголовок",
+                    price_text="240,000 ֏ в месяц",
+                    description="details",
+                ),
                 after_delivery=after_delivery,
             )
 
@@ -157,8 +164,22 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(
             callbacks,
             [
-                ("111", "details", 1111, "USD:111"),
-                ("222", "details", 1222, "USD:222"),
+                (
+                    "111",
+                    "Русский заголовок",
+                    "240,000 ֏ в месяц",
+                    "details",
+                    1111,
+                    "USD:111",
+                ),
+                (
+                    "222",
+                    "Русский заголовок",
+                    "240,000 ֏ в месяц",
+                    "details",
+                    1222,
+                    "USD:222",
+                ),
             ],
         )
 

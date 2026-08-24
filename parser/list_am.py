@@ -21,6 +21,8 @@ class CategoryPage:
 
 @dataclass(frozen=True)
 class ListingDetails:
+    title: str
+    price_text: str
     published_text: str
     updated_text: str
     description: str
@@ -40,6 +42,8 @@ def parse_listing_details(html: str) -> ListingDetails:
             translation_marker.decompose()
 
     return ListingDetails(
+        title=_text(soup.select_one('h1[itemprop="name"]')),
+        price_text=_text(soup.select_one('[itemprop="price"]')),
         published_text=_text(published_element),
         updated_text=_text(updated_element),
         description=_text(description_element),

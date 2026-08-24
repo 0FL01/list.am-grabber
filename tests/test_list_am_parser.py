@@ -39,6 +39,8 @@ class CategoryParserTest(unittest.TestCase):
         html = (FIXTURES / "detail.html").read_text(encoding="utf-8")
         details = parse_listing_details(html)
 
+        self.assertEqual(details.title, "2-комн. квартира в Цахкадзоре, 48 кв.м.")
+        self.assertEqual(details.price_text, "240,000 ֏ в месяц")
         self.assertEqual(
             (details.published_text, details.updated_text),
             ("Размещено 10.12.2023", "Обновлено 23.08.2026, 01:29"),

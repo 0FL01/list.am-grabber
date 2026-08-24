@@ -88,6 +88,8 @@ class ListAmScanner:
             details = parse_listing_details(detail_page.content())
             return replace(
                 listing,
+                title=details.title or listing.title,
+                price_text=details.price_text or listing.price_text,
                 published_text=details.published_text,
                 updated_text=details.updated_text,
                 description=details.description,
