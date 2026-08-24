@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import requests
 
@@ -32,14 +32,13 @@ def response(status=200, body=None, headers=None):
 
 
 def image_response(status=200, content_type="image/webp", content=b"image"):
-    result = MagicMock()
-    result.__enter__.return_value = result
+    result = Mock()
     result.status_code = status
     result.headers = {
         "Content-Type": content_type,
         "Content-Length": str(len(content)),
     }
-    result.iter_content.return_value = [content]
+    result.content = content
     return result
 
 
@@ -192,7 +191,7 @@ class AnalystClientTest(unittest.TestCase):
 
     def test_relays_images_through_proxy_as_data_urls(self):
         with patch(
-            "analyst.requests.get",
+            "analyst.curl_requests.get",
             return_value=image_response(content=b"webp"),
         ) as get, patch(
             "analyst.requests.post",
@@ -207,12 +206,10 @@ class AnalystClientTest(unittest.TestCase):
         self.assertEqual(download.args[0], self.listing.image_urls[0])
         self.assertEqual(download.kwargs["headers"]["Referer"], self.listing.url)
         self.assertEqual(
-            download.kwargs["proxies"],
-            {
-                "http": "socks5://172.25.0.1:40000",
-                "https": "socks5://172.25.0.1:40000",
-            },
+            download.kwargs["proxy"],
+            "socks5h://172.25.0.1:40000",
         )
+        self.assertEqual(download.kwargs["impersonate"], "chrome136")
         model_request = post.call_args.kwargs
         self.assertNotIn("proxies", model_request)
         image_url = model_request["json"]["messages"][1]["content"][1]
@@ -228,7 +225,7 @@ class AnalystClientTest(unittest.TestCase):
 
     def test_uses_text_mode_when_proxy_cannot_load_images(self):
         with patch(
-            "analyst.requests.get",
+            "analyst.curl_requests.get",
             return_value=image_response(status=403, content_type="text/html"),
         ) as get, patch(
             "analyst.requests.post",

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from threading import Event
 
 import requests
+from curl_cffi import requests as curl_requests
 from loguru import logger
 
 from dto import AnalystConfig
@@ -263,44 +264,30 @@ class AnalystClient:
         return tuple(images)
 
     def _download_image(self, referer: str, image_url: str) -> str | None:
-        proxies = {
-            "http": self.image_proxy_url,
-            "https": self.image_proxy_url,
-        }
+        proxy_url = self.image_proxy_url.replace("socks5://", "socks5h://", 1)
         try:
-            with requests.get(
+            response = curl_requests.get(
                 image_url,
                 headers={
                     "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
                     "Referer": referer,
                     "User-Agent": IMAGE_USER_AGENT,
                 },
-                proxies=proxies,
-                stream=True,
-                timeout=(10, 30),
+                proxy=proxy_url,
+                impersonate="chrome136",
+                timeout=30,
                 allow_redirects=False,
-            ) as response:
-                if not 200 <= response.status_code < 300:
-                    return None
-                content_type = response.headers.get("Content-Type", "").split(";", 1)[0]
-                content_type = content_type.strip().casefold()
-                if content_type not in IMAGE_CONTENT_TYPES:
-                    return None
-                try:
-                    content_length = int(response.headers.get("Content-Length", "0"))
-                except (TypeError, ValueError):
-                    content_length = 0
-                if content_length > MAX_IMAGE_BYTES:
-                    return None
-
-                content = bytearray()
-                for chunk in response.iter_content(64 * 1024):
-                    content.extend(chunk)
-                    if len(content) > MAX_IMAGE_BYTES:
-                        return None
-        except requests.exceptions.RequestException:
+            )
+        except curl_requests.RequestsError:
             return None
-        if not content:
+        if not 200 <= response.status_code < 300:
+            return None
+        content_type = response.headers.get("Content-Type", "").split(";", 1)[0]
+        content_type = content_type.strip().casefold()
+        if content_type not in IMAGE_CONTENT_TYPES:
+            return None
+        content = response.content
+        if not content or len(content) > MAX_IMAGE_BYTES:
             return None
         encoded = base64.b64encode(content).decode("ascii")
         return f"data:{content_type};base64,{encoded}"
