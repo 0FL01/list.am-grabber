@@ -31,8 +31,6 @@ class ListAmScanner:
         if self.proxy_url:
             launch_options["proxy"] = {"server": self.proxy_url}
         self.browser = playwright.chromium.launch(**launch_options)
-        self.context = self.browser.new_context(locale="ru-RU")
-        self.page = self.context.new_page()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -44,35 +42,44 @@ class ListAmScanner:
     def scan(self, search_urls: list[str], max_pages: int) -> list[RentalListing]:
         listings = {}
         for search_url in search_urls:
-            current_url = search_url
-            visited_urls = set()
+            self.context = self.browser.new_context(locale="ru-RU")
+            self.page = self.context.new_page()
+            try:
+                current_url = search_url
+                visited_urls = set()
 
-            for _ in range(max_pages):
-                if current_url in visited_urls:
-                    raise ScanError(f"Pagination loop at {current_url}")
-                visited_urls.add(current_url)
+                for _ in range(max_pages):
+                    if current_url in visited_urls:
+                        raise ScanError(f"Pagination loop at {current_url}")
+                    visited_urls.add(current_url)
 
-                self.page.goto(
-                    current_url,
-                    wait_until="domcontentloaded",
-                    timeout=60_000,
-                )
-                self._wait_for_challenge()
-                if self._is_challenge():
-                    raise ScanError("List.am blocked the headless browser")
-                if not self.page.locator("h1").count():
-                    raise ScanError(f"List.am category content is missing at {current_url}")
+                    self.page.goto(
+                        current_url,
+                        wait_until="domcontentloaded",
+                        timeout=60_000,
+                    )
+                    self._wait_for_challenge()
+                    if self._is_challenge():
+                        raise ScanError("List.am blocked the headless browser")
+                    if not self.page.locator("h1").count():
+                        raise ScanError(
+                            f"List.am category content is missing at {current_url}"
+                        )
 
-                parsed_page = parse_category_page(
-                    self.page.content(),
-                    current_url=self.page.url,
-                )
-                for listing in parsed_page.listings:
-                    listings.setdefault(listing.id, listing)
+                    parsed_page = parse_category_page(
+                        self.page.content(),
+                        current_url=self.page.url,
+                    )
+                    for listing in parsed_page.listings:
+                        listings.setdefault(listing.id, listing)
 
-                if not parsed_page.next_url:
-                    break
-                current_url = parsed_page.next_url
+                    if not parsed_page.next_url:
+                        break
+                    current_url = parsed_page.next_url
+            finally:
+                self.context.close()
+                self.context = None
+                self.page = None
 
         return list(listings.values())
 
