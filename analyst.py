@@ -240,6 +240,7 @@ class AnalystClient:
         payload = {
             "model": self.config.model,
             "store": False,
+            "stream": False,
             "reasoning_effort": self.config.reasoning_effort,
             "messages": [
                 {"role": "developer", "content": self.config.prompt},

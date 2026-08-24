@@ -154,6 +154,7 @@ class AnalystClientTest(unittest.TestCase):
         payload = request["json"]
         self.assertEqual(payload["model"], "any-model")
         self.assertFalse(payload["store"])
+        self.assertFalse(payload["stream"])
         self.assertEqual(payload["reasoning_effort"], "xhigh")
         self.assertNotIn("max_completion_tokens", payload)
         self.assertEqual(payload["messages"][0], {"role": "developer", "content": "Проверь"})
