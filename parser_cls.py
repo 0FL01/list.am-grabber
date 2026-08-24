@@ -1,4 +1,5 @@
 import argparse
+import os
 import signal
 from pathlib import Path
 from threading import Event
@@ -24,6 +25,7 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     )
     state = ListingStateStore(str(config.database_path))
     stop_event = Event()
+    proxy_url = os.environ.get("LIST_AM_PROXY_URL", "").strip()
     analyst = AnalystClient(config.analyst) if config.analyst.enabled else None
     if analyst:
         logger.info(
@@ -45,7 +47,7 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     while not stop_event.is_set():
         try:
             analysis_jobs = []
-            with ListAmScanner() as scanner:
+            with ListAmScanner(proxy_url=proxy_url) as scanner:
                 listings = scanner.scan(config.search_urls, config.max_pages)
 
                 def add_details(listing):

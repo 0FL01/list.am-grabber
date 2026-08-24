@@ -3,6 +3,15 @@ services:
     build: .
     image: list-am-search:local
     restart: unless-stopped
+    environment:
+      LIST_AM_PROXY_URL: ${LIST_AM_PROXY_URL:-}
     volumes:
       - ./config.toml:/app/config.toml:ro
       - ./data:/app/data
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+          gateway: 172.25.0.1

@@ -105,7 +105,7 @@ class RuntimeTest(unittest.TestCase):
             "parser_cls.TelegramNotifier", return_value=notifier
         ), patch("parser_cls.ListingStateStore", return_value=FakeState(events)), patch(
             "parser_cls.ListAmScanner",
-            side_effect=lambda: FakeScanner(events, listings),
+            side_effect=lambda **_kwargs: FakeScanner(events, listings),
         ), patch("parser_cls.AnalystClient", return_value=analyst), patch(
             "parser_cls.signal.signal"
         ), patch("parser.pipeline.time.sleep"):
@@ -180,7 +180,7 @@ class RuntimeTest(unittest.TestCase):
             "parser_cls.TelegramNotifier"
         ), patch("parser_cls.ListingStateStore", return_value=FakeState(events)), patch(
             "parser_cls.ListAmScanner",
-            side_effect=lambda: FakeScanner(events, []),
+            side_effect=lambda **_kwargs: FakeScanner(events, []),
         ), patch("parser_cls.AnalystClient") as client, patch(
             "parser_cls.signal.signal"
         ):

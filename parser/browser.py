@@ -12,8 +12,9 @@ class ScanError(RuntimeError):
 
 
 class ListAmScanner:
-    def __init__(self, headless: bool = True):
+    def __init__(self, headless: bool = True, proxy_url: str = ""):
         self.headless = headless
+        self.proxy_url = proxy_url
         self._playwright_context = None
         self.browser = None
         self.context = None
@@ -22,11 +23,14 @@ class ListAmScanner:
     def __enter__(self):
         self._playwright_context = Stealth().use_sync(sync_playwright())
         playwright = self._playwright_context.__enter__()
-        self.browser = playwright.chromium.launch(
-            headless=self.headless,
-            executable_path=playwright.chromium.executable_path,
-            args=["--disable-blink-features=AutomationControlled"],
-        )
+        launch_options = {
+            "headless": self.headless,
+            "executable_path": playwright.chromium.executable_path,
+            "args": ["--disable-blink-features=AutomationControlled"],
+        }
+        if self.proxy_url:
+            launch_options["proxy"] = {"server": self.proxy_url}
+        self.browser = playwright.chromium.launch(**launch_options)
         self.context = self.browser.new_context(locale="ru-RU")
         self.page = self.context.new_page()
         return self
