@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import requests
 
@@ -28,6 +28,18 @@ def response(status=200, body=None, headers=None):
             "completion_tokens_details": {"reasoning_tokens": 12},
         },
     }
+    return result
+
+
+def image_response(status=200, content_type="image/webp", content=b"image"):
+    result = MagicMock()
+    result.__enter__.return_value = result
+    result.status_code = status
+    result.headers = {
+        "Content-Type": content_type,
+        "Content-Length": str(len(content)),
+    }
+    result.iter_content.return_value = [content]
     return result
 
 
@@ -177,6 +189,63 @@ class AnalystClientTest(unittest.TestCase):
         self.assertEqual(request["headers"]["Authorization"], "Bearer secret")
         self.assertEqual(request["json"]["max_completion_tokens"], 4096)
         self.assertEqual(len(request["json"]["messages"][1]["content"]), 2)
+
+    def test_relays_images_through_proxy_as_data_urls(self):
+        with patch(
+            "analyst.requests.get",
+            return_value=image_response(content=b"webp"),
+        ) as get, patch(
+            "analyst.requests.post",
+            return_value=response(),
+        ) as post:
+            result = AnalystClient(
+                self.config(max_images=1),
+                image_proxy_url="socks5://172.25.0.1:40000",
+            ).analyze(self.listing)
+
+        download = get.call_args
+        self.assertEqual(download.args[0], self.listing.image_urls[0])
+        self.assertEqual(download.kwargs["headers"]["Referer"], self.listing.url)
+        self.assertEqual(
+            download.kwargs["proxies"],
+            {
+                "http": "socks5://172.25.0.1:40000",
+                "https": "socks5://172.25.0.1:40000",
+            },
+        )
+        model_request = post.call_args.kwargs
+        self.assertNotIn("proxies", model_request)
+        image_url = model_request["json"]["messages"][1]["content"][1]
+        self.assertEqual(
+            image_url,
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/webp;base64,d2VicA=="},
+            },
+        )
+        self.assertEqual(result.mode, "vision")
+        self.assertEqual(result.image_count, 1)
+
+    def test_uses_text_mode_when_proxy_cannot_load_images(self):
+        with patch(
+            "analyst.requests.get",
+            return_value=image_response(status=403, content_type="text/html"),
+        ) as get, patch(
+            "analyst.requests.post",
+            return_value=response(),
+        ) as post:
+            result = AnalystClient(
+                self.config(),
+                image_proxy_url="socks5://172.25.0.1:40000",
+            ).analyze(self.listing)
+
+        self.assertEqual(get.call_count, 3)
+        self.assertEqual(
+            len(post.call_args.kwargs["json"]["messages"][1]["content"]),
+            1,
+        )
+        self.assertEqual(result.mode, "text")
+        self.assertEqual(result.image_count, 0)
 
     @patch("analyst.requests.post")
     def test_retries_transient_errors_with_one_global_budget(self, post):

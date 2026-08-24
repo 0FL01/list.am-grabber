@@ -1,3 +1,4 @@
+import base64
 import math
 import re
 import time
@@ -20,6 +21,13 @@ PERMANENT_QUOTA_CODES = {
 }
 VISION_FALLBACK_STATUSES = {400, 413, 415, 422}
 TRANSIENT_STATUSES = {408, 409}
+IMAGE_CONTENT_TYPES = {"image/gif", "image/jpeg", "image/png", "image/webp"}
+MAX_IMAGE_BYTES = 20 * 1024 * 1024
+IMAGE_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/136.0.0.0 Safari/537.36"
+)
 
 
 @dataclass(frozen=True)
@@ -55,8 +63,9 @@ class AnalystError(RuntimeError):
 
 
 class AnalystClient:
-    def __init__(self, config: AnalystConfig):
+    def __init__(self, config: AnalystConfig, image_proxy_url: str = ""):
         self.config = config
+        self.image_proxy_url = image_proxy_url
         self.endpoint = f"{config.base_url.rstrip('/')}/chat/completions"
         self.cooldown_until = 0.0
 
@@ -72,7 +81,8 @@ class AnalystClient:
             raise AnalystError("stopped")
 
         image_urls = self._image_urls(listing)
-        mode = "vision" if self.config.vision and image_urls else "text"
+        image_inputs = self._image_inputs(listing, image_urls, stop_event)
+        mode = "vision" if self.config.vision and image_inputs else "text"
         attempts = 0
         max_attempts = 1 + self.config.retries
         malformed_json_retried = False
@@ -82,7 +92,7 @@ class AnalystClient:
             if stop_event and stop_event.is_set():
                 raise AnalystError("stopped")
             attempts += 1
-            active_images = image_urls if mode == "vision" else ()
+            active_images = image_inputs if mode == "vision" else ()
             logger.debug(
                 "analyst attempt listing={} attempt={}/{} mode={} images={}",
                 listing.id,
@@ -226,6 +236,74 @@ class AnalystClient:
         if self.config.api_key:
             headers["Authorization"] = f"Bearer {self.config.api_key}"
         return headers
+
+    def _image_inputs(
+        self,
+        listing: RentalListing,
+        image_urls: tuple[str, ...],
+        stop_event: Event | None,
+    ) -> tuple[str, ...]:
+        if not image_urls or not self.image_proxy_url:
+            return image_urls
+
+        images = []
+        for image_url in image_urls:
+            if stop_event and stop_event.is_set():
+                raise AnalystError("stopped")
+            image = self._download_image(listing.url, image_url)
+            if image:
+                images.append(image)
+        if len(images) != len(image_urls):
+            logger.warning(
+                "analyst images unavailable listing={} selected={} loaded={}",
+                listing.id,
+                len(image_urls),
+                len(images),
+            )
+        return tuple(images)
+
+    def _download_image(self, referer: str, image_url: str) -> str | None:
+        proxies = {
+            "http": self.image_proxy_url,
+            "https": self.image_proxy_url,
+        }
+        try:
+            with requests.get(
+                image_url,
+                headers={
+                    "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
+                    "Referer": referer,
+                    "User-Agent": IMAGE_USER_AGENT,
+                },
+                proxies=proxies,
+                stream=True,
+                timeout=(10, 30),
+                allow_redirects=False,
+            ) as response:
+                if not 200 <= response.status_code < 300:
+                    return None
+                content_type = response.headers.get("Content-Type", "").split(";", 1)[0]
+                content_type = content_type.strip().casefold()
+                if content_type not in IMAGE_CONTENT_TYPES:
+                    return None
+                try:
+                    content_length = int(response.headers.get("Content-Length", "0"))
+                except (TypeError, ValueError):
+                    content_length = 0
+                if content_length > MAX_IMAGE_BYTES:
+                    return None
+
+                content = bytearray()
+                for chunk in response.iter_content(64 * 1024):
+                    content.extend(chunk)
+                    if len(content) > MAX_IMAGE_BYTES:
+                        return None
+        except requests.exceptions.RequestException:
+            return None
+        if not content:
+            return None
+        encoded = base64.b64encode(content).decode("ascii")
+        return f"data:{content_type};base64,{encoded}"
 
     def _payload(
         self,

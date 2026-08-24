@@ -24,6 +24,7 @@ Headless Docker-монитор объявлений List.am с Telegram-алер
 - Telegram album: максимум 10 первых фото, caption только у первого; analyst может получить полную галерею.
 - Все Telegram sends проходят gate не меньше 1 секунды; batch jitter 1–2 секунды сохраняется.
 - Analyst запускается после сохранения всех основных алертов и закрытия Playwright; не добавлять ему browser, persistent state или историю.
+- Analyst image relay использует `LIST_AM_PROXY_URL` только для in-memory download; model requests остаются direct.
 - Analyst failure/reply failure не должен откатывать основной alert или прерывать следующие analysis jobs.
 - Markdown analyst reply конвертируется в whitelist Telegram HTML; не передавать raw model output через `parse_mode`.
 - Не коммитить `config.toml`, `data/`, cookies, browser profiles или credentials.

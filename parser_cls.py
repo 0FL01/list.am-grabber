@@ -26,7 +26,11 @@ def run_monitor(config_path: str, once: bool = False) -> int:
     state = ListingStateStore(str(config.database_path))
     stop_event = Event()
     proxy_url = os.environ.get("LIST_AM_PROXY_URL", "").strip()
-    analyst = AnalystClient(config.analyst) if config.analyst.enabled else None
+    analyst = (
+        AnalystClient(config.analyst, image_proxy_url=proxy_url)
+        if config.analyst.enabled
+        else None
+    )
     if analyst:
         logger.info(
             "analyst enabled model={} vision={} reply_format={} max_images={} max_completion_tokens={} retries={}",
