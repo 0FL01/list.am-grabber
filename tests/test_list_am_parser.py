@@ -61,5 +61,21 @@ class CategoryParserTest(unittest.TestCase):
             ),
         )
 
+    def test_recognizes_an_explicit_empty_category(self):
+        page = parse_category_page(
+            """
+            <html><body>
+              <h1>Долгосрочная аренда квартир</h1>
+              <div class="empty-state-title">
+                По вашему запросу ничего не найдено
+              </div>
+            </body></html>
+            """,
+            current_url="https://www.list.am/ru/category/56?price2=1",
+        )
+
+        self.assertEqual(page.listings, [])
+        self.assertTrue(page.is_empty)
+
 if __name__ == "__main__":
     unittest.main()

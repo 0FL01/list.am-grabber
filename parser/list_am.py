@@ -17,6 +17,7 @@ ITEM_PATH = re.compile(r"^/(?:[a-z]{2}/)?item/(\d+)/?$")
 class CategoryPage:
     listings: list[RentalListing]
     next_url: str | None
+    is_empty: bool = False
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,7 @@ def parse_category_page(html: str, current_url: str) -> CategoryPage:
     return CategoryPage(
         listings=listings,
         next_url=_find_next_url(soup=soup, current_url=current_url),
+        is_empty=bool(soup.select_one(".empty-state-title")),
     )
 
 

@@ -60,10 +60,14 @@ class ListAmScanner:
                     )
                     self._wait_for_challenge()
                     if self._is_challenge():
-                        raise ScanError("List.am blocked the headless browser")
+                        raise ScanError(
+                            "List.am blocked the headless browser at "
+                            f"{current_url} (final URL: {self.page.url})"
+                        )
                     if not self.page.locator("h1").count():
                         raise ScanError(
-                            f"List.am category content is missing at {current_url}"
+                            f"List.am category content is missing at {current_url} "
+                            f"(final URL: {self.page.url})"
                         )
 
                     parsed_page = parse_category_page(
@@ -72,6 +76,11 @@ class ListAmScanner:
                     )
                     for listing in parsed_page.listings:
                         listings.setdefault(listing.id, listing)
+                    if not parsed_page.listings and not parsed_page.is_empty:
+                        raise ScanError(
+                            f"List.am category listings are missing at {current_url} "
+                            f"(final URL: {self.page.url})"
+                        )
 
                     if not parsed_page.next_url:
                         break

@@ -42,7 +42,7 @@ class BrowserTest(unittest.TestCase):
         for page, url in zip(pages, ("https://first", "https://second")):
             page.url = url
             page.locator.return_value.count.return_value = 1
-        parse_category_page.return_value = CategoryPage([], None)
+        parse_category_page.return_value = CategoryPage([], None, is_empty=True)
 
         with ListAmScanner() as scanner, patch.object(
             scanner,
@@ -64,6 +64,37 @@ class BrowserTest(unittest.TestCase):
         )
         for context in contexts:
             context.close.assert_called_once_with()
+
+    @patch("parser.browser.parse_category_page")
+    @patch("parser.browser.Stealth")
+    @patch("parser.browser.sync_playwright")
+    def test_rejects_a_page_without_cards_or_empty_state(
+        self,
+        sync_playwright,
+        stealth,
+        parse_category_page,
+    ):
+        playwright_context = MagicMock()
+        playwright = playwright_context.__enter__.return_value
+        stealth.return_value.use_sync.return_value = playwright_context
+        browser = playwright.chromium.launch.return_value
+        context = browser.new_context.return_value
+        page = context.new_page.return_value
+        page.url = "https://www.list.am/"
+        page.locator.return_value.count.return_value = 1
+        parse_category_page.return_value = CategoryPage([], None)
+
+        with ListAmScanner() as scanner, patch.object(
+            scanner,
+            "_wait_for_challenge",
+        ), patch.object(scanner, "_is_challenge", return_value=False):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "category listings are missing.*final URL",
+            ):
+                scanner.scan(["https://category"], 1)
+
+        context.close.assert_called_once_with()
 
 
 if __name__ == "__main__":
